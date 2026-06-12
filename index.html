@@ -3,53 +3,49 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Buku Kas Digital — Laporan Keuangan</title>
+<title>Dashboard Keuangan</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400..700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Inter+Tight:wght@500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <style>
   :root{
-    --paper: #F1EEE3;
-    --paper-deep: #E8E3D3;
-    --card: #FBFAF3;
-    --line: #D6D0BD;
-    --ink: #20302A;
-    --ink-soft: #5E6B61;
-    --green: #2F6B4F;
-    --green-soft: #DCE8E0;
-    --rust: #AE5639;
-    --rust-soft: #F2DFD6;
-    --gold: #C2933F;
-    --gold-soft: #F1E4C7;
-    --navy: #34566B;
-    --navy-soft: #DCE5EA;
-    --radius: 14px;
+    --bg: #F3F4F8;
+    --surface: #FFFFFF;
+    --border: #E6E8EF;
+    --text: #14172B;
+    --text-soft: #6E7388;
+    --text-faint: #A0A4B8;
+    --primary: #4C5FFF;
+    --primary-soft: #ECEEFF;
+    --green: #16A34A;
+    --green-soft: #E8F7EE;
+    --red: #E0433D;
+    --red-soft: #FCEAE9;
+    --amber: #F0A93E;
+    --amber-soft: #FDF2E1;
+    --teal: #0EA5A5;
+    --teal-soft: #E4F6F6;
+    --radius-lg: 16px;
+    --radius-md: 12px;
+    --shadow: 0 1px 2px rgba(20,23,43,0.04), 0 8px 24px -12px rgba(20,23,43,0.08);
   }
 
   *{ box-sizing: border-box; }
-  html{ scroll-behavior: smooth; }
 
   body{
     margin:0;
-    background:
-      repeating-linear-gradient(
-        to bottom,
-        transparent 0,
-        transparent 38px,
-        var(--paper-deep) 39px,
-        transparent 40px
-      ), var(--paper);
-    color: var(--ink);
-    font-family: 'Plus Jakarta Sans', sans-serif;
-    line-height: 1.5;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
   }
 
   .page{
-    max-width: 1140px;
+    max-width: 1240px;
     margin: 0 auto;
-    padding: 24px 20px 60px;
+    padding: 28px 24px 60px;
   }
 
   /* ---------- Topbar ---------- */
@@ -57,287 +53,288 @@
     display:flex;
     flex-wrap: wrap;
     justify-content: space-between;
-    align-items: flex-end;
+    align-items: center;
     gap: 16px;
-    padding-bottom: 18px;
-    border-bottom: 2px solid var(--ink);
     margin-bottom: 28px;
   }
-  .brand-eyebrow{
-    display:block;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 12px;
-    letter-spacing: .18em;
-    text-transform: uppercase;
-    color: var(--ink-soft);
-    margin-bottom: 6px;
+  .brand{ display:flex; align-items:center; gap: 12px; }
+  .brand-mark{
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    background: var(--primary);
+    display:flex; align-items:center; justify-content:center;
+    flex-shrink: 0;
   }
+  .brand-mark svg{ width: 20px; height: 20px; }
   .brand h1{
-    font-family: 'Fraunces', serif;
-    font-weight: 600;
-    font-size: clamp(28px, 5vw, 42px);
+    font-family: 'Inter Tight', sans-serif;
+    font-weight: 700;
+    font-size: 19px;
     margin: 0;
+    line-height: 1.2;
     outline: none;
-    border-bottom: 1px dashed transparent;
   }
-  .brand h1:focus, .brand h1:hover{
-    border-bottom: 1px dashed var(--ink-soft);
-  }
-  .brand h1::after{
-    content: '✎';
-    font-size: 14px;
-    color: var(--ink-soft);
-    margin-left: 10px;
-    opacity: .5;
+  .brand span{
+    display:block;
+    font-size: 12.5px;
+    color: var(--text-soft);
+    margin-top: 1px;
   }
 
   .period-tabs{
     display:flex;
-    border: 2px solid var(--ink);
-    border-radius: 999px;
-    overflow:hidden;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 4px;
+    box-shadow: var(--shadow);
   }
   .period-tabs button{
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 14px;
+    font-family: 'Inter', sans-serif;
+    font-size: 13.5px;
     font-weight: 600;
-    padding: 9px 22px;
+    padding: 8px 20px;
     border: none;
-    background: var(--card);
-    color: var(--ink);
+    border-radius: 7px;
+    background: transparent;
+    color: var(--text-soft);
     cursor: pointer;
     transition: background .15s, color .15s;
   }
-  .period-tabs button + button{ border-left: 2px solid var(--ink); }
-  .period-tabs button.active{ background: var(--ink); color: var(--paper); }
-  .period-tabs button:focus-visible{ outline: 3px solid var(--gold); outline-offset: -3px; }
-
-  /* ---------- Hero ---------- */
-  .hero{
-    display:flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 28px;
-    padding: 28px 0 36px;
-    position: relative;
-  }
-  .hero-label{
-    font-family:'IBM Plex Mono', monospace;
-    font-size: 13px;
-    letter-spacing: .12em;
-    text-transform: uppercase;
-    color: var(--ink-soft);
-    display:block;
-    margin-bottom: 6px;
-  }
-  .hero-number{
-    font-family: 'Fraunces', serif;
-    font-weight: 600;
-    font-size: clamp(40px, 9vw, 84px);
-    line-height: 1;
-    letter-spacing: -.01em;
-  }
-  .hero-sub{
-    font-size: 14px;
-    color: var(--ink-soft);
-    margin-top: 8px;
-  }
-  .stamp{
-    font-family: 'IBM Plex Mono', monospace;
-    font-weight: 600;
-    font-size: 14px;
-    text-transform: uppercase;
-    letter-spacing: .08em;
-    border: 3px double currentColor;
-    border-radius: 50%;
-    width: 118px;
-    height: 118px;
-    display:flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align:center;
-    transform: rotate(-9deg);
-    flex-shrink: 0;
-    line-height: 1.25;
-  }
-  .stamp.positive{ color: var(--green); }
-  .stamp.negative{ color: var(--rust); }
-  .stamp small{ font-size: 10px; letter-spacing: .14em; opacity: .8; }
+  .period-tabs button.active{ background: var(--primary); color: #fff; }
+  .period-tabs button:focus-visible{ outline: 2px solid var(--primary); outline-offset: 2px; }
 
   /* ---------- KPI grid ---------- */
   .kpi-grid{
     display:grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 14px;
-    margin-bottom: 36px;
+    gap: 16px;
+    margin-bottom: 20px;
   }
   .kpi-card{
-    background: var(--card);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    padding: 16px 18px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    box-shadow: var(--shadow);
   }
-  .kpi-card h3{
-    margin: 0 0 10px;
-    font-size: 13px;
+  .kpi-top{
+    display:flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .kpi-icon{
+    width: 36px; height: 36px;
+    border-radius: 9px;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .kpi-icon svg{ width: 18px; height: 18px; }
+  .kpi-icon.primary{ background: var(--primary-soft); color: var(--primary); }
+  .kpi-icon.green{ background: var(--green-soft); color: var(--green); }
+  .kpi-icon.amber{ background: var(--amber-soft); color: var(--amber); }
+  .kpi-icon.red{ background: var(--red-soft); color: var(--red); }
+  .kpi-trend{
+    display:flex;
+    align-items:center;
+    gap: 4px;
+    font-size: 12.5px;
     font-weight: 600;
-    color: var(--ink-soft);
-    text-transform: uppercase;
-    letter-spacing: .06em;
+    padding: 3px 8px;
+    border-radius: 999px;
+  }
+  .kpi-trend svg{ width: 12px; height: 12px; }
+  .kpi-trend.up{ color: var(--green); background: var(--green-soft); }
+  .kpi-trend.down{ color: var(--red); background: var(--red-soft); }
+  .kpi-trend.flat{ color: var(--text-soft); background: var(--bg); }
+  .kpi-label{
+    font-size: 13px;
+    color: var(--text-soft);
+    margin: 0 0 6px;
+    font-weight: 500;
   }
   .kpi-value{
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: clamp(18px, 2.4vw, 24px);
-    font-weight: 600;
-    margin-bottom: 10px;
-  }
-  .kpi-card canvas{ width:100%; height: 42px; }
-
-  /* ---------- Section heads ---------- */
-  .section-head{
-    display:flex;
-    align-items: baseline;
-    gap: 12px;
-    margin-bottom: 14px;
-    border-bottom: 1px solid var(--line);
-    padding-bottom: 8px;
-  }
-  .section-head h2{
-    font-family: 'Fraunces', serif;
-    font-weight: 600;
-    font-size: 24px;
-    margin: 0;
-  }
-  .section-head p{
-    margin:0;
-    font-size: 13px;
-    color: var(--ink-soft);
+    font-family: 'Inter Tight', sans-serif;
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -.01em;
+    font-feature-settings: "tnum";
   }
 
-  .chart-section{ margin-bottom: 36px; }
-  .chart-card{
-    background: var(--card);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    padding: 20px;
-  }
-  .chart-card canvas{ max-height: 320px; }
-
-  .percent-section{
+  /* ---------- Main grid ---------- */
+  .main-grid{
     display:grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 14px;
-    margin-bottom: 36px;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 16px;
+    margin-bottom: 20px;
+    align-items: stretch;
   }
-  .percent-section .chart-card h3{
-    margin: 0 0 12px;
-    font-size: 15px;
-    font-weight: 600;
-    color: var(--ink-soft);
-    text-transform: uppercase;
-    letter-spacing: .06em;
+  .card{
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 22px;
+    box-shadow: var(--shadow);
   }
-  .percent-section .chart-card canvas{ max-height: 220px; }
+  .card-head{
+    display:flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 18px;
+    gap: 12px;
+  }
+  .card-head h2{
+    font-family: 'Inter Tight', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    margin: 0 0 4px;
+  }
+  .card-head p{
+    margin: 0;
+    font-size: 13px;
+    color: var(--text-soft);
+  }
+  .legend-pill{
+    display:flex; align-items:center; gap:6px;
+    font-size: 12.5px; color: var(--text-soft); font-weight: 500;
+  }
+  .legend-pill .dot{
+    width: 8px; height: 8px; border-radius: 50%;
+  }
 
-  /* ---------- Ledger table ---------- */
-  .table-wrap{
-    background: var(--card);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    overflow: auto;
+  .chart-card canvas{ max-height: 300px; }
+
+  /* Composition / breakdown card */
+  .breakdown-list{ display:flex; flex-direction: column; gap: 14px; }
+  .breakdown-row{ display:flex; flex-direction: column; gap: 6px; }
+  .breakdown-top{
+    display:flex; justify-content: space-between; align-items:baseline;
+    font-size: 13.5px;
   }
+  .breakdown-top .name{ font-weight: 600; color: var(--text); }
+  .breakdown-top .val{
+    font-family: 'Inter Tight', sans-serif;
+    font-weight: 700;
+    font-feature-settings: "tnum";
+  }
+  .breakdown-bar{
+    height: 8px;
+    background: var(--bg);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .breakdown-bar-fill{
+    height: 100%;
+    border-radius: 999px;
+    transition: width .4s ease;
+  }
+  .breakdown-foot{
+    margin-top: 10px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+    display:flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .breakdown-foot .label{ font-size: 13px; color: var(--text-soft); font-weight: 500; }
+  .breakdown-foot .value{
+    font-family: 'Inter Tight', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+  }
+  .breakdown-foot .value.positive{ color: var(--green); }
+  .breakdown-foot .value.negative{ color: var(--red); }
+
+  /* ---------- Table card ---------- */
+  .table-wrap{ overflow-x: auto; }
   table{
     width: 100%;
     border-collapse: collapse;
-    font-family: 'IBM Plex Mono', monospace;
     font-size: 13.5px;
-    min-width: 560px;
   }
   thead th{
     text-align: left;
-    padding: 12px 16px;
-    font-family: 'Plus Jakarta Sans', sans-serif;
+    padding: 10px 14px;
     font-size: 12px;
+    font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: .08em;
-    color: var(--ink-soft);
-    border-bottom: 2px solid var(--ink);
+    letter-spacing: .04em;
+    color: var(--text-faint);
+    border-bottom: 1px solid var(--border);
     white-space: nowrap;
   }
   thead th.num, td.num{ text-align: right; }
   tbody td{
-    padding: 9px 16px;
-    border-bottom: 1px solid var(--line);
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
     white-space: nowrap;
+    font-feature-settings: "tnum";
   }
-  tbody tr.quarter-start td{ border-top: 2px solid var(--ink); padding-top: 14px; }
-  td.q-label{
-    font-family: 'Plus Jakarta Sans', sans-serif;
-    font-weight: 600;
+  tbody tr:last-child td{ border-bottom: none; }
+  tbody tr:hover{ background: var(--bg); }
+  td.q-label{ font-weight: 600; }
+  .badge-q{
+    display:inline-block;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--primary);
+    background: var(--primary-soft);
+    padding: 3px 9px;
+    border-radius: 6px;
   }
-  tbody tr.total-row td{
-    border-top: 2px solid var(--ink);
-    border-bottom: none;
-    font-weight: 600;
-    padding-top: 12px;
-  }
-  tbody tr.total-row td.q-label{ font-family: 'Fraunces', serif; font-size: 15px; }
+  tbody tr.total-row{ background: var(--bg); font-weight: 700; }
+  tbody tr.total-row td{ border-bottom: none; }
 
   /* ---------- Footer / states ---------- */
   footer{
-    margin-top: 30px;
-    font-size: 12px;
-    color: var(--ink-soft);
+    margin-top: 24px;
+    font-size: 12.5px;
+    color: var(--text-faint);
     text-align: center;
-    font-family: 'IBM Plex Mono', monospace;
   }
 
   #loadingOverlay{
     position: fixed; inset: 0;
-    background: var(--paper);
+    background: var(--bg);
     display:flex; flex-direction: column; align-items:center; justify-content:center;
     gap: 14px;
-    font-family: 'IBM Plex Mono', monospace;
-    letter-spacing: .1em;
-    text-transform: uppercase;
-    font-size: 13px;
-    color: var(--ink-soft);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-soft);
     z-index: 50;
   }
-  .pen{
-    width: 36px; height: 36px;
-    border: 3px solid var(--ink-soft);
+  .spinner{
+    width: 32px; height: 32px;
+    border: 3px solid var(--border);
     border-radius: 50%;
-    border-top-color: var(--ink);
-    animation: spin 0.9s linear infinite;
+    border-top-color: var(--primary);
+    animation: spin 0.8s linear infinite;
   }
   @keyframes spin{ to{ transform: rotate(360deg); } }
 
   #errorBanner{
-    border: 2px dashed var(--rust);
-    background: var(--rust-soft);
-    color: var(--rust);
-    border-radius: var(--radius);
-    padding: 18px 20px;
-    margin-bottom: 28px;
+    border: 1px solid #F6D2CF;
+    background: var(--red-soft);
+    color: var(--red);
+    border-radius: var(--radius-md);
+    padding: 16px 18px;
+    margin-bottom: 24px;
     font-size: 14px;
   }
   #errorBanner code{
     display:block;
     margin-top: 8px;
-    font-family: 'IBM Plex Mono', monospace;
     font-size: 12px;
     word-break: break-all;
+    color: #9B3530;
   }
 
-  @media (max-width: 880px){
+  @media (max-width: 1024px){
     .kpi-grid{ grid-template-columns: repeat(2, 1fr); }
-    .percent-section{ grid-template-columns: 1fr; }
+    .main-grid{ grid-template-columns: 1fr; }
   }
-  @media (max-width: 520px){
+  @media (max-width: 560px){
     .kpi-grid{ grid-template-columns: 1fr; }
-    .hero{ flex-direction: column; align-items: flex-start; }
   }
 
   @media (prefers-reduced-motion: reduce){
@@ -348,16 +345,21 @@
 <body>
 
 <div id="loadingOverlay">
-  <div class="pen"></div>
-  <div>Membuka buku kas…</div>
+  <div class="spinner"></div>
+  <div>Memuat data keuangan…</div>
 </div>
 
 <div class="page">
 
   <header class="topbar">
     <div class="brand">
-      <span class="brand-eyebrow">Buku Kas Digital · Laporan Keuangan</span>
-      <h1 id="storeName" contenteditable="true" spellcheck="false">Nama Toko Anda</h1>
+      <div class="brand-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+      </div>
+      <div>
+        <h1 id="storeName" contenteditable="true" spellcheck="false">Nama Toko Anda</h1>
+        <span>Dashboard Laporan Keuangan</span>
+      </div>
     </div>
     <div class="period-tabs" id="periodTabs"></div>
   </header>
@@ -366,66 +368,86 @@
 
   <main id="mainContent" hidden>
 
-    <section class="hero">
-      <div>
-        <span class="hero-label">Total Pendapatan Bersih</span>
-        <div class="hero-number" id="heroRevenue">Rp0</div>
-        <div class="hero-sub" id="heroSub">Akumulasi Q1–Q4</div>
-      </div>
-      <div class="stamp" id="yoyStamp">
-        <span id="yoyValue">0%</span>
-        <small>vs tahun lalu</small>
-      </div>
-    </section>
-
     <section class="kpi-grid">
       <article class="kpi-card">
-        <h3>Pendapatan Bersih</h3>
+        <div class="kpi-top">
+          <div class="kpi-icon primary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          </div>
+          <span class="kpi-trend" id="trend-pendapatan"></span>
+        </div>
+        <p class="kpi-label">Pendapatan Bersih</p>
         <div class="kpi-value" id="kpi-pendapatan">Rp0</div>
-        <canvas id="spark-pendapatan"></canvas>
       </article>
+
       <article class="kpi-card">
-        <h3>Laba Kotor</h3>
+        <div class="kpi-top">
+          <div class="kpi-icon green">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+          </div>
+          <span class="kpi-trend" id="trend-laba"></span>
+        </div>
+        <p class="kpi-label">Laba Kotor</p>
         <div class="kpi-value" id="kpi-laba">Rp0</div>
-        <canvas id="spark-laba"></canvas>
       </article>
+
       <article class="kpi-card">
-        <h3>Biaya Modal</h3>
+        <div class="kpi-icon-row">
+        <div class="kpi-top">
+          <div class="kpi-icon amber">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+          </div>
+          <span class="kpi-trend" id="trend-modal"></span>
+        </div>
+        </div>
+        <p class="kpi-label">Biaya Modal</p>
         <div class="kpi-value" id="kpi-modal">Rp0</div>
-        <canvas id="spark-modal"></canvas>
       </article>
+
       <article class="kpi-card">
-        <h3>Beban Operasional</h3>
+        <div class="kpi-top">
+          <div class="kpi-icon red">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l2.5 2.5"/></svg>
+          </div>
+          <span class="kpi-trend" id="trend-beban"></span>
+        </div>
+        <p class="kpi-label">Beban Operasional</p>
         <div class="kpi-value" id="kpi-beban">Rp0</div>
-        <canvas id="spark-beban"></canvas>
       </article>
     </section>
 
-    <section class="chart-section">
-      <div class="section-head">
-        <h2>Rincian per Kuartal</h2>
-        <p id="quarterlySub">Perbandingan empat pos keuangan, Q1–Q4</p>
-      </div>
-      <div class="chart-card">
+    <section class="main-grid">
+      <div class="card chart-card">
+        <div class="card-head">
+          <div>
+            <h2>Performa per Kuartal</h2>
+            <p id="quarterlySub">Perbandingan empat pos keuangan</p>
+          </div>
+        </div>
         <canvas id="quarterlyChart"></canvas>
       </div>
+
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <h2>Komposisi Tahunan</h2>
+            <p id="breakdownSub">Proporsi pos terhadap pendapatan</p>
+          </div>
+        </div>
+        <div class="breakdown-list" id="breakdownList"></div>
+        <div class="breakdown-foot">
+          <span class="label">Estimasi Laba Bersih</span>
+          <span class="value" id="netProfit">Rp0</span>
+        </div>
+      </div>
     </section>
 
-    <section class="percent-section">
-      <div class="chart-card">
-        <h3>Procentace Revenue</h3>
-        <canvas id="revenuePctChart"></canvas>
-      </div>
-      <div class="chart-card">
-        <h3>Procentace Beban Oprasional</h3>
-        <canvas id="bebanPctChart"></canvas>
-      </div>
-    </section>
-
-    <section class="ledger-section">
-      <div class="section-head">
-        <h2>Buku Besar</h2>
-        <p>Rincian lengkap semua kuartal &amp; tahun</p>
+    <section class="card">
+      <div class="card-head">
+        <div>
+          <h2>Rincian Lengkap</h2>
+          <p>Semua pos per kuartal &amp; tahun</p>
+        </div>
       </div>
       <div class="table-wrap">
         <table id="ledgerTable">
@@ -464,10 +486,10 @@ const METRIC_SHORT = {
   'Beban Oprasional': 'Beban Operasional'
 };
 const METRIC_COLOR = {
-  'Laba Kotor (Gross Profit)': '#2F6B4F',
-  'Pendapatan Bersih (Net Sales/Revenue)': '#C2933F',
-  'Biaya Modal': '#34566B',
-  'Beban Oprasional': '#AE5639'
+  'Laba Kotor (Gross Profit)': '#16A34A',
+  'Pendapatan Bersih (Net Sales/Revenue)': '#4C5FFF',
+  'Biaya Modal': '#F0A93E',
+  'Beban Oprasional': '#E0433D'
 };
 const QUARTERS = ['Q1 (JAN-MARCH)','Q2 (APRIL-JUNE)','Q3 (JULY-SEPT)','Q4 (OCT-DES)'];
 const QUARTER_SHORT = ['Q1','Q2','Q3','Q4'];
@@ -482,17 +504,12 @@ function parseRp(val){
   const n = parseFloat(s.replace(/Rp|,|\s/g,''));
   return isNaN(n) ? null : n;
 }
-function parsePct(val){
-  if(val === undefined || val === null) return null;
-  const s = String(val).trim();
-  if(s === '') return null;
-  const n = parseFloat(s.replace(/%|\s/g,''));
-  return isNaN(n) ? null : n;
-}
 function fmtRp(n){
   if(n === null || n === undefined) return '—';
   return 'Rp' + Math.round(n).toLocaleString('id-ID');
 }
+const upIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>';
+const downIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
 
 async function loadData(){
   try{
@@ -508,11 +525,9 @@ async function loadData(){
 
 function processData(rows){
   const financial = {};
-  const percent = { Revenue: {}, Beban: {} };
   let years = ['2025', '2026'];
   let mode = null;
   let currentQuarter = null;
-  let percentKey = null;
 
   for(const row of rows){
     const label = (row[0] || '').toString().trim();
@@ -523,19 +538,11 @@ function processData(rows){
       mode = 'financial';
       continue;
     }
-    if(label.startsWith('Procentace Revenue')){ mode = 'percent'; percentKey = 'Revenue'; continue; }
-    if(label.startsWith('Procentace Beban')){ mode = 'percent'; percentKey = 'Beban'; continue; }
+    if(label.startsWith('Procentace')){ mode = null; continue; }
 
     if(/^Q[1-4]/.test(label)){
       currentQuarter = label;
-      if(mode === 'financial'){
-        financial[currentQuarter] = {};
-      }else if(mode === 'percent'){
-        percent[percentKey][currentQuarter] = {
-          [years[0]]: parsePct(row[1]),
-          [years[1]]: parsePct(row[2])
-        };
-      }
+      if(mode === 'financial') financial[currentQuarter] = {};
       continue;
     }
 
@@ -547,7 +554,7 @@ function processData(rows){
     }
   }
 
-  state.data = { years, financial, percent };
+  state.data = { years, financial };
   state.year = years[0];
   init();
 }
@@ -594,81 +601,68 @@ function quarterSeries(metric, year){
   });
 }
 
+function setTrend(elId, current, previous){
+  const el = document.getElementById(elId);
+  if(!previous){
+    el.className = 'kpi-trend flat';
+    el.textContent = '—';
+    return;
+  }
+  const change = ((current - previous) / previous) * 100;
+  if(Math.abs(change) < 0.05){
+    el.className = 'kpi-trend flat';
+    el.textContent = '0%';
+    return;
+  }
+  el.className = 'kpi-trend ' + (change >= 0 ? 'up' : 'down');
+  el.innerHTML = (change >= 0 ? upIcon : downIcon) + (Math.abs(change)).toFixed(1) + '%';
+}
+
 function render(){
   const [y1, y2] = state.data.years;
   const otherYear = state.year === y1 ? y2 : y1;
 
-  // Hero
   const revKey = 'Pendapatan Bersih (Net Sales/Revenue)';
-  const revTotal = totalFor(revKey, state.year);
-  document.getElementById('heroRevenue').textContent = fmtRp(revTotal);
-  document.getElementById('heroSub').textContent = 'Akumulasi Q1–Q4 · ' + state.year;
+  const gpKey = 'Laba Kotor (Gross Profit)';
+  const cogsKey = 'Biaya Modal';
+  const opexKey = 'Beban Oprasional';
 
-  const revOther = totalFor(revKey, otherYear);
-  const stamp = document.getElementById('yoyStamp');
-  const yoyValue = document.getElementById('yoyValue');
-  if(revOther > 0){
-    const change = ((revTotal - revOther) / revOther) * 100;
-    yoyValue.textContent = (change >= 0 ? '+' : '') + change.toFixed(1) + '%';
-    stamp.classList.toggle('positive', change >= 0);
-    stamp.classList.toggle('negative', change < 0);
-  }else{
-    yoyValue.textContent = '—';
-    stamp.classList.remove('positive','negative');
-  }
+  const revenue = totalFor(revKey, state.year);
+  const grossProfit = totalFor(gpKey, state.year);
+  const cogs = totalFor(cogsKey, state.year);
+  const opex = totalFor(opexKey, state.year);
 
-  // KPI cards
-  renderKpi('kpi-pendapatan', 'spark-pendapatan', revKey, METRIC_COLOR[revKey]);
-  renderKpi('kpi-laba', 'spark-laba', 'Laba Kotor (Gross Profit)', METRIC_COLOR['Laba Kotor (Gross Profit)']);
-  renderKpi('kpi-modal', 'spark-modal', 'Biaya Modal', METRIC_COLOR['Biaya Modal']);
-  renderKpi('kpi-beban', 'spark-beban', 'Beban Oprasional', METRIC_COLOR['Beban Oprasional']);
+  document.getElementById('kpi-pendapatan').textContent = fmtRp(revenue);
+  document.getElementById('kpi-laba').textContent = fmtRp(grossProfit);
+  document.getElementById('kpi-modal').textContent = fmtRp(cogs);
+  document.getElementById('kpi-beban').textContent = fmtRp(opex);
 
-  // Quarterly grouped chart
+  setTrend('trend-pendapatan', revenue, totalFor(revKey, otherYear));
+  setTrend('trend-laba', grossProfit, totalFor(gpKey, otherYear));
+  setTrend('trend-modal', cogs, totalFor(cogsKey, otherYear));
+  setTrend('trend-beban', opex, totalFor(opexKey, otherYear));
+
+  // Main chart
   renderQuarterlyChart();
 
-  // Percentage charts
-  renderPercentChart('revenuePctChart', state.data.percent.Revenue, 'Revenue');
-  renderPercentChart('bebanPctChart', state.data.percent.Beban, 'Beban');
+  // Breakdown
+  renderBreakdown(revenue, grossProfit, cogs, opex);
 
   // Ledger table
   buildLedgerTable();
 }
 
-function renderKpi(valueId, sparkId, metricKey, color){
-  const total = totalFor(metricKey, state.year);
-  document.getElementById(valueId).textContent = fmtRp(total);
-
-  const series = quarterSeries(metricKey, state.year).map(v => v || 0);
-  const ctx = document.getElementById(sparkId);
-  if(charts[sparkId]) charts[sparkId].destroy();
-  charts[sparkId] = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: QUARTER_SHORT,
-      datasets: [{ data: series, backgroundColor: color, borderRadius: 3 }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: { legend: { display: false }, tooltip: { enabled: false } },
-      scales: {
-        x: { display: false },
-        y: { display: false }
-      }
-    }
-  });
-}
-
 function renderQuarterlyChart(){
   const ctx = document.getElementById('quarterlyChart');
-  document.getElementById('quarterlySub').textContent =
-    'Laba kotor, pendapatan bersih, biaya modal & beban operasional — tahun ' + state.year;
+  document.getElementById('quarterlySub').textContent = 'Tahun ' + state.year;
 
   const datasets = METRICS.map(m => ({
     label: METRIC_SHORT[m],
     data: quarterSeries(m, state.year),
     backgroundColor: METRIC_COLOR[m],
-    borderRadius: 4
+    borderRadius: 6,
+    borderSkipped: false,
+    maxBarThickness: 36
   }));
 
   if(charts.quarterly) charts.quarterly.destroy();
@@ -680,19 +674,26 @@ function renderQuarterlyChart(){
       maintainAspectRatio: false,
       interaction: { mode: 'index', intersect: false },
       plugins: {
-        legend: { position: 'bottom', labels: { font: { family: "'Plus Jakarta Sans'" } } },
+        legend: {
+          position: 'bottom',
+          labels: { font: { family: "'Inter'", size: 12.5 }, boxWidth: 10, boxHeight: 10, usePointStyle: true, pointStyle: 'circle' }
+        },
         tooltip: {
-          callbacks: {
-            label: ctx => `${ctx.dataset.label}: ${fmtRp(ctx.raw)}`
-          }
+          backgroundColor: '#14172B',
+          padding: 10,
+          cornerRadius: 8,
+          titleFont: { family: "'Inter'", weight: '600' },
+          bodyFont: { family: "'Inter'" },
+          callbacks: { label: ctx => `${ctx.dataset.label}: ${fmtRp(ctx.raw)}` }
         }
       },
       scales: {
-        x: { grid: { display: false }, ticks: { font: { family: "'IBM Plex Mono'" } } },
+        x: { grid: { display: false }, ticks: { font: { family: "'Inter'", weight: '600' } } },
         y: {
-          grid: { color: '#D6D0BD' },
+          grid: { color: '#EEF0F5' },
+          border: { display: false },
           ticks: {
-            font: { family: "'IBM Plex Mono'" },
+            font: { family: "'Inter'" },
             callback: v => 'Rp' + (v/1000000).toFixed(0) + 'jt'
           }
         }
@@ -701,48 +702,36 @@ function renderQuarterlyChart(){
   });
 }
 
-function renderPercentChart(canvasId, dataSource, key){
-  const [y1, y2] = state.data.years;
-  const series1 = QUARTERS.map(q => dataSource[q] ? dataSource[q][y1] : null);
-  const series2 = QUARTERS.map(q => dataSource[q] ? dataSource[q][y2] : null);
+function renderBreakdown(revenue, grossProfit, cogs, opex){
+  const list = document.getElementById('breakdownList');
+  document.getElementById('breakdownSub').textContent = 'Terhadap pendapatan bersih · ' + state.year;
+  const base = revenue || Math.max(grossProfit, cogs, opex, 1);
 
-  if(charts[canvasId]) charts[canvasId].destroy();
-  charts[canvasId] = new Chart(document.getElementById(canvasId), {
-    type: 'line',
-    data: {
-      labels: QUARTER_SHORT,
-      datasets: [
-        {
-          label: y1,
-          data: series1,
-          borderColor: '#34566B',
-          backgroundColor: '#34566B',
-          tension: .3,
-          spanGaps: true
-        },
-        {
-          label: y2,
-          data: series2,
-          borderColor: '#C2933F',
-          backgroundColor: '#C2933F',
-          tension: .3,
-          spanGaps: true
-        }
-      ]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { position: 'bottom', labels: { font: { family: "'Plus Jakarta Sans'" } } },
-        tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.raw === null ? '—' : ctx.raw + '%'}` } }
-      },
-      scales: {
-        x: { grid: { display: false }, ticks: { font: { family: "'IBM Plex Mono'" } } },
-        y: { grid: { color: '#D6D0BD' }, ticks: { font: { family: "'IBM Plex Mono'" }, callback: v => v + '%' } }
-      }
-    }
-  });
+  const items = [
+    { name: 'Laba Kotor', value: grossProfit, color: 'var(--green)' },
+    { name: 'Biaya Modal', value: cogs, color: 'var(--amber)' },
+    { name: 'Beban Operasional', value: opex, color: 'var(--red)' }
+  ];
+
+  list.innerHTML = items.map(item => {
+    const pct = base ? Math.min(100, (item.value / base) * 100) : 0;
+    return `
+      <div class="breakdown-row">
+        <div class="breakdown-top">
+          <span class="name">${item.name}</span>
+          <span class="val">${fmtRp(item.value)}</span>
+        </div>
+        <div class="breakdown-bar">
+          <div class="breakdown-bar-fill" style="width:${pct}%; background:${item.color};"></div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  const netProfit = revenue - cogs - opex;
+  const netEl = document.getElementById('netProfit');
+  netEl.textContent = fmtRp(netProfit);
+  netEl.className = 'value ' + (netProfit >= 0 ? 'positive' : 'negative');
 }
 
 function buildLedgerTable(){
@@ -754,9 +743,8 @@ function buildLedgerTable(){
     METRICS.forEach((m, mi) => {
       const vals = (state.data.financial[q] && state.data.financial[q][m]) || {};
       const tr = document.createElement('tr');
-      if(mi === 0) tr.classList.add('quarter-start');
       tr.innerHTML = `
-        <td class="q-label">${mi === 0 ? QUARTER_SHORT[qi] : ''}</td>
+        <td class="q-label">${mi === 0 ? `<span class="badge-q">${QUARTER_SHORT[qi]}</span>` : ''}</td>
         <td>${METRIC_SHORT[m]}</td>
         <td class="num">${fmtRp(vals[y1])}</td>
         <td class="num">${fmtRp(vals[y2])}</td>
@@ -765,12 +753,10 @@ function buildLedgerTable(){
     });
   });
 
-  // Totals row
   const tr = document.createElement('tr');
   tr.classList.add('total-row');
   tr.innerHTML = `
-    <td class="q-label">Total</td>
-    <td>Pendapatan Bersih</td>
+    <td colspan="2">Total Pendapatan Bersih</td>
     <td class="num">${fmtRp(totalFor('Pendapatan Bersih (Net Sales/Revenue)', y1))}</td>
     <td class="num">${fmtRp(totalFor('Pendapatan Bersih (Net Sales/Revenue)', y2))}</td>
   `;
@@ -782,10 +768,9 @@ function showError(err){
   const banner = document.getElementById('errorBanner');
   banner.hidden = false;
   banner.innerHTML = `
-    <strong>Data tidak dapat dimuat.</strong>
-    Pastikan link CSV masih bisa diakses publik (File → Bagikan → Publikasikan ke web → CSV).
+    <strong>Data tidak dapat dimuat.</strong> Pastikan link CSV masih bisa diakses publik (File → Bagikan → Publikasikan ke web → CSV).
     <code>${CSV_URL}</code>
-    <div style="margin-top:8px; font-family:'Plex Jakarta Sans',sans-serif;">Detail: ${err.message}</div>
+    <div style="margin-top:8px;">Detail: ${err.message}</div>
   `;
 }
 
