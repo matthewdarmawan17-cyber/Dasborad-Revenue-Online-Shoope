@@ -1,648 +1,795 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dashboard Rekap Toko 2024 vs 2025</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Buku Kas Digital — Laporan Keuangan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400..700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  :root {
-    --blue:   #378ADD; --teal: #1D9E75; --amber: #EF9F27;
-    --coral:  #D85A30; --purple: #7F77DD;
-    --bg:     #F7F8FA; --surface: #FFFFFF;
-    --border: rgba(0,0,0,0.08);
-    --text1:  #1A1A2E; --text2: #5F5E5A; --text3: #888780;
-    --radius: 12px; --radius-sm: 8px;
+  :root{
+    --paper: #F1EEE3;
+    --paper-deep: #E8E3D3;
+    --card: #FBFAF3;
+    --line: #D6D0BD;
+    --ink: #20302A;
+    --ink-soft: #5E6B61;
+    --green: #2F6B4F;
+    --green-soft: #DCE8E0;
+    --rust: #AE5639;
+    --rust-soft: #F2DFD6;
+    --gold: #C2933F;
+    --gold-soft: #F1E4C7;
+    --navy: #34566B;
+    --navy-soft: #DCE5EA;
+    --radius: 14px;
   }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text1); min-height: 100vh; }
 
-  .topnav { background: var(--surface); border-bottom: 0.5px solid var(--border); padding: 0 2rem; display: flex; align-items: center; justify-content: space-between; height: 58px; position: sticky; top: 0; z-index: 10; }
-  .nav-brand { display: flex; align-items: center; gap: 10px; }
-  .nav-icon { width: 32px; height: 32px; border-radius: 8px; background: linear-gradient(135deg, #378ADD, #1D9E75); display: flex; align-items: center; justify-content: center; }
-  .nav-icon svg { width: 18px; height: 18px; fill: #fff; }
-  .nav-title { font-size: 15px; font-weight: 600; color: var(--text1); }
-  .nav-sub { font-size: 12px; color: var(--text3); }
-  .nav-right { display: flex; align-items: center; gap: 8px; }
-  .nav-badge { background: #E6F1FB; color: #185FA5; font-size: 12px; font-weight: 500; padding: 4px 10px; border-radius: 20px; }
-  .btn-print { background: var(--blue); color: #fff; border: none; border-radius: var(--radius-sm); padding: 7px 14px; font-size: 13px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 6px; }
-  .btn-print:hover { background: #185FA5; }
-  .btn-refresh { background: transparent; color: var(--blue); border: 1px solid var(--blue); border-radius: var(--radius-sm); padding: 6px 12px; font-size: 13px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 5px; }
-  .btn-refresh:hover { background: #E6F1FB; }
-  .btn-refresh svg, .btn-print svg { width: 14px; height: 14px; }
-  .btn-print svg { fill: #fff; }
-  .btn-refresh svg { fill: none; stroke: var(--blue); stroke-width: 2; }
+  *{ box-sizing: border-box; }
+  html{ scroll-behavior: smooth; }
 
-  .main { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1.5rem 3rem; }
+  body{
+    margin:0;
+    background:
+      repeating-linear-gradient(
+        to bottom,
+        transparent 0,
+        transparent 38px,
+        var(--paper-deep) 39px,
+        transparent 40px
+      ), var(--paper);
+    color: var(--ink);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    line-height: 1.5;
+  }
 
-  /* Loading & Error */
-  .state-box { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 320px; gap: 14px; }
-  .spinner { width: 36px; height: 36px; border: 3px solid #E6F1FB; border-top-color: var(--blue); border-radius: 50%; animation: spin 0.8s linear infinite; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .state-title { font-size: 15px; font-weight: 500; color: var(--text2); }
-  .state-sub { font-size: 13px; color: var(--text3); text-align: center; max-width: 420px; }
-  .error-icon { font-size: 32px; }
+  .page{
+    max-width: 1140px;
+    margin: 0 auto;
+    padding: 24px 20px 60px;
+  }
 
-  /* Setup banner */
-  .setup-banner { background: #FFF8E6; border: 1px solid #FAC775; border-radius: var(--radius); padding: 1rem 1.25rem; margin-bottom: 1.25rem; display: flex; gap: 12px; align-items: flex-start; }
-  .setup-banner svg { width: 20px; height: 20px; fill: none; stroke: #BA7517; stroke-width: 2; flex-shrink: 0; margin-top: 1px; }
-  .setup-text { font-size: 13px; color: #633806; line-height: 1.6; }
-  .setup-text b { font-weight: 600; }
-  .setup-text code { background: rgba(0,0,0,0.06); padding: 1px 5px; border-radius: 4px; font-size: 12px; }
-  .setup-text a { color: #185FA5; }
-  .btn-dismiss { background: none; border: none; font-size: 18px; color: #BA7517; cursor: pointer; margin-left: auto; flex-shrink: 0; }
+  /* ---------- Topbar ---------- */
+  .topbar{
+    display:flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 16px;
+    padding-bottom: 18px;
+    border-bottom: 2px solid var(--ink);
+    margin-bottom: 28px;
+  }
+  .brand-eyebrow{
+    display:block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-bottom: 6px;
+  }
+  .brand h1{
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: clamp(28px, 5vw, 42px);
+    margin: 0;
+    outline: none;
+    border-bottom: 1px dashed transparent;
+  }
+  .brand h1:focus, .brand h1:hover{
+    border-bottom: 1px dashed var(--ink-soft);
+  }
+  .brand h1::after{
+    content: '✎';
+    font-size: 14px;
+    color: var(--ink-soft);
+    margin-left: 10px;
+    opacity: .5;
+  }
 
-  .filterbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 10px; }
-  .page-heading { font-size: 18px; font-weight: 600; color: var(--text1); }
-  .page-sub { font-size: 13px; color: var(--text3); margin-top: 2px; }
-  .tabs { display: flex; gap: 4px; background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-sm); padding: 3px; }
-  .tabs button { font-size: 13px; font-weight: 500; padding: 6px 16px; border: none; background: transparent; border-radius: 6px; cursor: pointer; color: var(--text2); transition: all 0.15s; }
-  .tabs button.active { background: var(--blue); color: #fff; }
+  .period-tabs{
+    display:flex;
+    border: 2px solid var(--ink);
+    border-radius: 999px;
+    overflow:hidden;
+  }
+  .period-tabs button{
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 9px 22px;
+    border: none;
+    background: var(--card);
+    color: var(--ink);
+    cursor: pointer;
+    transition: background .15s, color .15s;
+  }
+  .period-tabs button + button{ border-left: 2px solid var(--ink); }
+  .period-tabs button.active{ background: var(--ink); color: var(--paper); }
+  .period-tabs button:focus-visible{ outline: 3px solid var(--gold); outline-offset: -3px; }
 
-  .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; margin-bottom: 1.25rem; }
-  .mcard { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 1rem 1.25rem; }
-  .mcard-label { font-size: 12px; color: var(--text3); margin-bottom: 8px; display: flex; align-items: center; gap: 5px; }
-  .mcard-label svg { width: 14px; height: 14px; }
-  .mcard-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 8px; }
-  .mcard-val { font-size: 22px; font-weight: 700; color: var(--text1); line-height: 1; }
-  .mcard-val span { font-size: 13px; font-weight: 400; color: var(--text3); }
-  .mcard-badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 20px; white-space: nowrap; }
-  .up { background: #E1F5EE; color: #0F6E56; }
-  .down { background: #FAECE7; color: #993C1D; }
-  .mcard-compare { font-size: 11px; color: var(--text3); margin-top: 6px; }
-  .mcard-compare b { color: var(--text2); }
+  /* ---------- Hero ---------- */
+  .hero{
+    display:flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 28px;
+    padding: 28px 0 36px;
+    position: relative;
+  }
+  .hero-label{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 13px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    display:block;
+    margin-bottom: 6px;
+  }
+  .hero-number{
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: clamp(40px, 9vw, 84px);
+    line-height: 1;
+    letter-spacing: -.01em;
+  }
+  .hero-sub{
+    font-size: 14px;
+    color: var(--ink-soft);
+    margin-top: 8px;
+  }
+  .stamp{
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    border: 3px double currentColor;
+    border-radius: 50%;
+    width: 118px;
+    height: 118px;
+    display:flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align:center;
+    transform: rotate(-9deg);
+    flex-shrink: 0;
+    line-height: 1.25;
+  }
+  .stamp.positive{ color: var(--green); }
+  .stamp.negative{ color: var(--rust); }
+  .stamp small{ font-size: 10px; letter-spacing: .14em; opacity: .8; }
 
-  .yoy-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px,1fr)); gap: 12px; margin-bottom: 1.25rem; }
-  .yoy-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 1rem 1.25rem; display: flex; align-items: center; gap: 14px; }
-  .yoy-icon { width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-  .yoy-icon svg { width: 22px; height: 22px; }
-  .yoy-lbl { font-size: 11px; color: var(--text3); margin-bottom: 4px; }
-  .yoy-vals { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
-  .yoy-2025 { font-size: 18px; font-weight: 700; color: var(--text1); }
-  .yoy-2024 { font-size: 13px; color: var(--text3); text-decoration: line-through; }
-  .yoy-pct { font-size: 12px; font-weight: 600; padding: 2px 7px; border-radius: 20px; }
+  /* ---------- KPI grid ---------- */
+  .kpi-grid{
+    display:grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 36px;
+  }
+  .kpi-card{
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+  }
+  .kpi-card h3{
+    margin: 0 0 10px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    text-transform: uppercase;
+    letter-spacing: .06em;
+  }
+  .kpi-value{
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: clamp(18px, 2.4vw, 24px);
+    font-weight: 600;
+    margin-bottom: 10px;
+  }
+  .kpi-card canvas{ width:100%; height: 42px; }
 
-  .chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 1.25rem; }
-  .chart-full { grid-column: 1 / -1; }
-  .ccard { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 1.25rem; }
-  .ccard-title { font-size: 14px; font-weight: 600; color: var(--text1); }
-  .ccard-sub { font-size: 12px; color: var(--text3); margin-bottom: 12px; margin-top: 2px; }
-  .legend { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 10px; }
-  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--text2); }
-  .leg-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+  /* ---------- Section heads ---------- */
+  .section-head{
+    display:flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 14px;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 8px;
+  }
+  .section-head h2{
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 24px;
+    margin: 0;
+  }
+  .section-head p{
+    margin:0;
+    font-size: 13px;
+    color: var(--ink-soft);
+  }
 
-  .tcard { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 1.25rem; margin-bottom: 1.25rem; overflow-x: auto; }
-  .tcard-title { font-size: 14px; font-weight: 600; color: var(--text1); margin-bottom: 14px; }
-  table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 600px; }
-  thead th { text-align: left; padding: 9px 12px; color: var(--text3); font-weight: 500; font-size: 12px; background: var(--bg); border-bottom: 0.5px solid var(--border); }
-  tbody td { padding: 10px 12px; border-bottom: 0.5px solid var(--border); color: var(--text1); }
-  tbody tr:last-child td { border-bottom: none; }
-  tbody tr:hover td { background: #f9f9fb; }
-  .num { text-align: right; font-variant-numeric: tabular-nums; }
-  .tbadge { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 20px; }
+  .chart-section{ margin-bottom: 36px; }
+  .chart-card{
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 20px;
+  }
+  .chart-card canvas{ max-height: 320px; }
 
-  /* last updated */
-  .last-updated { font-size: 11px; color: var(--text3); text-align: right; margin-bottom: 8px; }
+  .percent-section{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 36px;
+  }
+  .percent-section .chart-card h3{
+    margin: 0 0 12px;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    text-transform: uppercase;
+    letter-spacing: .06em;
+  }
+  .percent-section .chart-card canvas{ max-height: 220px; }
 
-  .footer { font-size: 12px; color: var(--text3); text-align: center; padding-top: 1.5rem; border-top: 0.5px solid var(--border); line-height: 1.8; }
-  .footer code { background: rgba(0,0,0,0.06); padding: 1px 5px; border-radius: 4px; }
+  /* ---------- Ledger table ---------- */
+  .table-wrap{
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    overflow: auto;
+  }
+  table{
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13.5px;
+    min-width: 560px;
+  }
+  thead th{
+    text-align: left;
+    padding: 12px 16px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: var(--ink-soft);
+    border-bottom: 2px solid var(--ink);
+    white-space: nowrap;
+  }
+  thead th.num, td.num{ text-align: right; }
+  tbody td{
+    padding: 9px 16px;
+    border-bottom: 1px solid var(--line);
+    white-space: nowrap;
+  }
+  tbody tr.quarter-start td{ border-top: 2px solid var(--ink); padding-top: 14px; }
+  td.q-label{
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 600;
+  }
+  tbody tr.total-row td{
+    border-top: 2px solid var(--ink);
+    border-bottom: none;
+    font-weight: 600;
+    padding-top: 12px;
+  }
+  tbody tr.total-row td.q-label{ font-family: 'Fraunces', serif; font-size: 15px; }
 
-  #dashboard { display: none; }
+  /* ---------- Footer / states ---------- */
+  footer{
+    margin-top: 30px;
+    font-size: 12px;
+    color: var(--ink-soft);
+    text-align: center;
+    font-family: 'IBM Plex Mono', monospace;
+  }
 
-  @media (max-width: 640px) { .chart-grid { grid-template-columns: 1fr; } .chart-full { grid-column: 1; } .topnav { padding: 0 1rem; } .main { padding: 1rem 1rem 3rem; } }
+  #loadingOverlay{
+    position: fixed; inset: 0;
+    background: var(--paper);
+    display:flex; flex-direction: column; align-items:center; justify-content:center;
+    gap: 14px;
+    font-family: 'IBM Plex Mono', monospace;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    font-size: 13px;
+    color: var(--ink-soft);
+    z-index: 50;
+  }
+  .pen{
+    width: 36px; height: 36px;
+    border: 3px solid var(--ink-soft);
+    border-radius: 50%;
+    border-top-color: var(--ink);
+    animation: spin 0.9s linear infinite;
+  }
+  @keyframes spin{ to{ transform: rotate(360deg); } }
+
+  #errorBanner{
+    border: 2px dashed var(--rust);
+    background: var(--rust-soft);
+    color: var(--rust);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    margin-bottom: 28px;
+    font-size: 14px;
+  }
+  #errorBanner code{
+    display:block;
+    margin-top: 8px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    word-break: break-all;
+  }
+
+  @media (max-width: 880px){
+    .kpi-grid{ grid-template-columns: repeat(2, 1fr); }
+    .percent-section{ grid-template-columns: 1fr; }
+  }
+  @media (max-width: 520px){
+    .kpi-grid{ grid-template-columns: 1fr; }
+    .hero{ flex-direction: column; align-items: flex-start; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration: .001ms !important; transition-duration: .001ms !important; }
+  }
 </style>
 </head>
 <body>
 
-<nav class="topnav">
-  <div class="nav-brand">
-    <div class="nav-icon">
-      <svg viewBox="0 0 24 24"><path d="M3 3h7v7H3zm11 0h7v7h-7zM3 14h7v7H3zm11 3h2v-2h2v2h2v2h-2v2h-2v-2h-2v-2z"/></svg>
+<div id="loadingOverlay">
+  <div class="pen"></div>
+  <div>Membuka buku kas…</div>
+</div>
+
+<div class="page">
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-eyebrow">Buku Kas Digital · Laporan Keuangan</span>
+      <h1 id="storeName" contenteditable="true" spellcheck="false">Nama Toko Anda</h1>
     </div>
-    <div>
-      <div class="nav-title">Dashboard Rekap Toko</div>
-      <div class="nav-sub">Perbandingan 2024 vs 2025</div>
-    </div>
-  </div>
-  <div class="nav-right">
-    <span class="nav-badge" id="data-source-badge">Demo Data</span>
-    <button class="btn-refresh" onclick="reloadData()" title="Refresh data dari Google Sheets">
-      <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-      Refresh
-    </button>
-    <button class="btn-print" onclick="window.print()">
-      <svg viewBox="0 0 24 24"><path d="M17 17h2a2 2 0 0 0 2-2v-4a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h2m2 4h6a2 2 0 0 0 2-2v-4H7v4a2 2 0 0 0 2 2zM7 9V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v4"/></svg>
-      Cetak / PDF
-    </button>
-  </div>
-</nav>
+    <div class="period-tabs" id="periodTabs"></div>
+  </header>
 
-<div class="main">
-  <!-- STATE: loading -->
-  <div id="state-loading" class="state-box">
-    <div class="spinner"></div>
-    <div class="state-title">Mengambil data dari Google Sheets…</div>
-    <div class="state-sub">Pastikan URL CSV sudah dipasang dan Google Sheets sudah di-publish.</div>
-  </div>
+  <div id="errorBanner" hidden></div>
 
-  <!-- STATE: error -->
-  <div id="state-error" class="state-box" style="display:none;">
-    <div class="error-icon">⚠️</div>
-    <div class="state-title">Gagal mengambil data</div>
-    <div class="state-sub" id="error-msg">Terjadi kesalahan saat menghubungi Google Sheets.</div>
-    <button class="btn-refresh" onclick="reloadData()" style="margin-top:8px;">
-      <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-      Coba Lagi
-    </button>
-  </div>
+  <main id="mainContent" hidden>
 
-  <!-- DASHBOARD -->
-  <div id="dashboard">
-
-    <!-- Setup banner (muncul saat pakai demo data) -->
-    <div class="setup-banner" id="setup-banner">
-      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-      <div class="setup-text">
-        <b>Sekarang menggunakan data contoh.</b> Untuk koneksi otomatis ke Excel/Google Sheets kamu:<br>
-        1. Buka Google Sheets → <b>File → Share → Publish to web</b> → pilih sheet → format <b>CSV</b> → Publish → copy URL<br>
-        2. Buka file HTML ini dengan teks editor → cari <code>CSV_URL</code> di baris paling atas script → ganti dengan URL tadi<br>
-        3. Upload ulang ke GitHub. Dashboard akan auto-refresh setiap buka halaman. ✅
-      </div>
-      <button class="btn-dismiss" onclick="document.getElementById('setup-banner').style.display='none'" title="Tutup">×</button>
-    </div>
-
-    <div class="filterbar">
+    <section class="hero">
       <div>
-        <div class="page-heading" id="page-heading">Ringkasan Bulanan</div>
-        <div class="page-sub">Semua angka dalam juta rupiah (Rp jt)</div>
+        <span class="hero-label">Total Pendapatan Bersih</span>
+        <div class="hero-number" id="heroRevenue">Rp0</div>
+        <div class="hero-sub" id="heroSub">Akumulasi Q1–Q4</div>
       </div>
-      <div class="tabs">
-        <button class="active" onclick="setView('bulanan',this)">Bulanan</button>
-        <button onclick="setView('kuartal',this)">Kuartal</button>
+      <div class="stamp" id="yoyStamp">
+        <span id="yoyValue">0%</span>
+        <small>vs tahun lalu</small>
       </div>
-    </div>
+    </section>
 
-    <div class="last-updated" id="last-updated"></div>
+    <section class="kpi-grid">
+      <article class="kpi-card">
+        <h3>Pendapatan Bersih</h3>
+        <div class="kpi-value" id="kpi-pendapatan">Rp0</div>
+        <canvas id="spark-pendapatan"></canvas>
+      </article>
+      <article class="kpi-card">
+        <h3>Laba Kotor</h3>
+        <div class="kpi-value" id="kpi-laba">Rp0</div>
+        <canvas id="spark-laba"></canvas>
+      </article>
+      <article class="kpi-card">
+        <h3>Biaya Modal</h3>
+        <div class="kpi-value" id="kpi-modal">Rp0</div>
+        <canvas id="spark-modal"></canvas>
+      </article>
+      <article class="kpi-card">
+        <h3>Beban Operasional</h3>
+        <div class="kpi-value" id="kpi-beban">Rp0</div>
+        <canvas id="spark-beban"></canvas>
+      </article>
+    </section>
 
-    <!-- YoY cards -->
-    <div class="yoy-grid">
-      <div class="yoy-card">
-        <div class="yoy-icon" style="background:#E6F1FB;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="#378ADD" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-        </div>
-        <div>
-          <div class="yoy-lbl">Total Omzet 2025 vs 2024</div>
-          <div class="yoy-vals">
-            <span class="yoy-2025" id="yoy-omzet25">—</span>
-            <span class="yoy-2024" id="yoy-omzet24">—</span>
-            <span class="yoy-pct" id="yoy-omzet-pct">—</span>
-          </div>
-        </div>
+    <section class="chart-section">
+      <div class="section-head">
+        <h2>Rincian per Kuartal</h2>
+        <p id="quarterlySub">Perbandingan empat pos keuangan, Q1–Q4</p>
       </div>
-      <div class="yoy-card">
-        <div class="yoy-icon" style="background:#E1F5EE;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="#1D9E75" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
-        </div>
-        <div>
-          <div class="yoy-lbl">Laba Kotor 2025 vs 2024</div>
-          <div class="yoy-vals">
-            <span class="yoy-2025" id="yoy-lk25">—</span>
-            <span class="yoy-2024" id="yoy-lk24">—</span>
-            <span class="yoy-pct" id="yoy-lk-pct">—</span>
-          </div>
-        </div>
+      <div class="chart-card">
+        <canvas id="quarterlyChart"></canvas>
       </div>
-      <div class="yoy-card">
-        <div class="yoy-icon" style="background:#FAEEDA;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="#BA7517" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-        </div>
-        <div>
-          <div class="yoy-lbl">Beban Operasional 2025 vs 2024</div>
-          <div class="yoy-vals">
-            <span class="yoy-2025" id="yoy-beban25">—</span>
-            <span class="yoy-2024" id="yoy-beban24">—</span>
-            <span class="yoy-pct" id="yoy-beban-pct">—</span>
-          </div>
-        </div>
-      </div>
-      <div class="yoy-card">
-        <div class="yoy-icon" style="background:#EAF3DE;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="#3B6D11" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-        </div>
-        <div>
-          <div class="yoy-lbl">Laba Bersih 2025 vs 2024</div>
-          <div class="yoy-vals">
-            <span class="yoy-2025" id="yoy-lb25">—</span>
-            <span class="yoy-2024" id="yoy-lb24">—</span>
-            <span class="yoy-pct" id="yoy-lb-pct">—</span>
-          </div>
-        </div>
-      </div>
-    </div>
+    </section>
 
-    <!-- KPI metrics -->
-    <div class="metrics">
-      <div class="mcard">
-        <div class="mcard-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>Total Omzet</div>
-        <div class="mcard-row"><div class="mcard-val" id="k-omzet">—</div><span class="mcard-badge" id="kb-omzet">—</span></div>
-        <div class="mcard-compare">2024: <b id="k-omzet24">—</b></div>
+    <section class="percent-section">
+      <div class="chart-card">
+        <h3>Procentace Revenue</h3>
+        <canvas id="revenuePctChart"></canvas>
       </div>
-      <div class="mcard">
-        <div class="mcard-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg>Laba Kotor</div>
-        <div class="mcard-row"><div class="mcard-val" id="k-lk">—</div><span class="mcard-badge" id="kb-lk">—</span></div>
-        <div class="mcard-compare">2024: <b id="k-lk24">—</b></div>
+      <div class="chart-card">
+        <h3>Procentace Beban Oprasional</h3>
+        <canvas id="bebanPctChart"></canvas>
       </div>
-      <div class="mcard">
-        <div class="mcard-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Laba Bersih</div>
-        <div class="mcard-row"><div class="mcard-val" id="k-lb">—</div><span class="mcard-badge" id="kb-lb">—</span></div>
-        <div class="mcard-compare">2024: <b id="k-lb24">—</b></div>
-      </div>
-      <div class="mcard">
-        <div class="mcard-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 18V6"/></svg>Beban Operasional</div>
-        <div class="mcard-row"><div class="mcard-val" id="k-beban">—</div><span class="mcard-badge" id="kb-beban">—</span></div>
-        <div class="mcard-compare">2024: <b id="k-beban24">—</b></div>
-      </div>
-      <div class="mcard">
-        <div class="mcard-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Margin Bersih</div>
-        <div class="mcard-row"><div class="mcard-val" id="k-margin">—</div><span class="mcard-badge" id="kb-margin">—</span></div>
-        <div class="mcard-compare">2024: <b id="k-margin24">—</b></div>
-      </div>
-    </div>
+    </section>
 
-    <!-- Charts -->
-    <div class="chart-grid">
-      <div class="ccard chart-full">
-        <div class="ccard-title">Omzet: 2024 vs 2025</div>
-        <div class="ccard-sub" id="c1-sub">Per bulan — juta rupiah</div>
-        <div class="legend">
-          <div class="legend-item"><span class="leg-dot" style="background:#378ADD;"></span>2025</div>
-          <div class="legend-item"><span class="leg-dot" style="background:#B5D4F4; border:1px dashed #378ADD;"></span>2024</div>
-        </div>
-        <div style="position:relative;width:100%;height:240px;"><canvas id="c1" role="img" aria-label="Grafik perbandingan omzet 2024 vs 2025"></canvas></div>
+    <section class="ledger-section">
+      <div class="section-head">
+        <h2>Buku Besar</h2>
+        <p>Rincian lengkap semua kuartal &amp; tahun</p>
       </div>
-      <div class="ccard">
-        <div class="ccard-title">Laba Kotor & Bersih</div>
-        <div class="ccard-sub" id="c2-sub">Per periode — juta rupiah</div>
-        <div class="legend">
-          <div class="legend-item"><span class="leg-dot" style="background:#1D9E75;"></span>Laba Kotor 2025</div>
-          <div class="legend-item"><span class="leg-dot" style="background:#9FE1CB; border:1px dashed #1D9E75;"></span>Laba Kotor 2024</div>
-          <div class="legend-item"><span class="leg-dot" style="background:#639922;"></span>Laba Bersih 2025</div>
-        </div>
-        <div style="position:relative;width:100%;height:220px;"><canvas id="c2" role="img" aria-label="Grafik laba kotor dan bersih"></canvas></div>
+      <div class="table-wrap">
+        <table id="ledgerTable">
+          <thead>
+            <tr>
+              <th>Kuartal</th>
+              <th>Pos</th>
+              <th class="num" id="th-y1">2025</th>
+              <th class="num" id="th-y2">2026</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
       </div>
-      <div class="ccard">
-        <div class="ccard-title">Beban Operasional</div>
-        <div class="ccard-sub">Perbandingan 2024 vs 2025</div>
-        <div class="legend">
-          <div class="legend-item"><span class="leg-dot" style="background:#D85A30;"></span>2025</div>
-          <div class="legend-item"><span class="leg-dot" style="background:#F5C4B3; border:1px dashed #D85A30;"></span>2024</div>
-        </div>
-        <div style="position:relative;width:100%;height:220px;"><canvas id="c3" role="img" aria-label="Grafik beban operasional"></canvas></div>
-      </div>
-      <div class="ccard">
-        <div class="ccard-title">Distribusi Beban 2025</div>
-        <div class="ccard-sub">Komposisi pengeluaran operasional</div>
-        <div class="legend">
-          <div class="legend-item"><span class="leg-dot" style="background:#378ADD;"></span>Gaji</div>
-          <div class="legend-item"><span class="leg-dot" style="background:#1D9E75;"></span>Sewa</div>
-          <div class="legend-item"><span class="leg-dot" style="background:#EF9F27;"></span>Logistik</div>
-          <div class="legend-item"><span class="leg-dot" style="background:#D85A30;"></span>Lain-lain</div>
-        </div>
-        <div style="position:relative;width:100%;height:220px;"><canvas id="c4" role="img" aria-label="Pie chart distribusi beban operasional"></canvas></div>
-      </div>
-      <div class="ccard chart-full">
-        <div class="ccard-title">Stok Produk per Kategori</div>
-        <div class="ccard-sub">Perbandingan unit — 2024 vs 2025</div>
-        <div class="legend">
-          <div class="legend-item"><span class="leg-dot" style="background:#378ADD;"></span>2025</div>
-          <div class="legend-item"><span class="leg-dot" style="background:#B5D4F4; border:1px dashed #378ADD;"></span>2024</div>
-        </div>
-        <div style="position:relative;width:100%;height:200px;"><canvas id="c5" role="img" aria-label="Grafik stok produk per kategori"></canvas></div>
-      </div>
-    </div>
+    </section>
 
-    <!-- Table -->
-    <div class="tcard">
-      <div class="tcard-title" id="table-title">Tabel Perbandingan per Bulan</div>
-      <table>
-        <thead>
-          <tr>
-            <th>Periode</th>
-            <th class="num">Omzet 2025</th><th class="num">Omzet 2024</th><th class="num">Δ Omzet</th>
-            <th class="num">Laba Bersih 2025</th><th class="num">Laba Bersih 2024</th>
-            <th class="num">Margin 2025</th><th class="num">YoY</th>
-          </tr>
-        </thead>
-        <tbody id="tbody"></tbody>
-      </table>
-    </div>
+  </main>
 
-    <div class="footer">
-      Dashboard Rekap Toko &bull; Data otomatis dari Google Sheets (CSV publish) &bull;
-      Ganti <code>CSV_URL_BULANAN</code> dan <code>CSV_URL_KUARTAL</code> di bagian script sesuai URL kamu.
-    </div>
-  </div><!-- /dashboard -->
+  <footer id="footerNote"></footer>
+
 </div>
 
 <script>
-/* ================================================================
-   KONFIGURASI — GANTI 2 URL INI DENGAN URL GOOGLE SHEETS KAMU
-   Cara dapat URL:
-   1. Buka Google Sheets → File → Share → Publish to web
-   2. Pilih sheet (misal "Data Bulanan") → Format: CSV → Publish
-   3. Copy URL yang muncul, paste di bawah ini
+const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSQWUewZ-OBUnjdMwMlEz8VKJ8l7_KcKFb60wlWXwnhP-Ql1n-HszEn-vT3lnS581u9rc6o8GasX_yu/pub?output=csv";
 
-   Jika hanya punya 1 sheet, isi kedua URL dengan URL yang sama
-   tapi filter baris sendiri di fungsi parseCSV().
-================================================================ */
-const CSV_URL_BULANAN  = '';   // contoh: 'https://docs.google.com/spreadsheets/d/XXXX/export?format=csv&gid=0'
-const CSV_URL_KUARTAL  = '';   // contoh: 'https://docs.google.com/spreadsheets/d/XXXX/export?format=csv&gid=123456'
-
-/* ================================================================
-   KOLOM CSV — sesuaikan index kolom dengan urutan di sheet kamu
-   Index 0 = kolom pertama (A), 1 = kolom B, dst.
-   Format sheet yang diharapkan (baris pertama = header):
-   Periode | Omzet_2025 | Omzet_2024 | LabaKotor_2025 | LabaKotor_2024 | LabaBersih_2025 | LabaBersih_2024 | Beban_2025 | Beban_2024
-================================================================ */
-const COL = {
-  label:        0,
-  omzet25:      1,
-  omzet24:      2,
-  labaKotor25:  3,
-  labaKotor24:  4,
-  labaBersih25: 5,
-  labaBersih24: 6,
-  beban25:      7,
-  beban24:      8,
+const METRICS = [
+  'Laba Kotor (Gross Profit)',
+  'Pendapatan Bersih (Net Sales/Revenue)',
+  'Biaya Modal',
+  'Beban Oprasional'
+];
+const METRIC_SHORT = {
+  'Laba Kotor (Gross Profit)': 'Laba Kotor',
+  'Pendapatan Bersih (Net Sales/Revenue)': 'Pendapatan Bersih',
+  'Biaya Modal': 'Biaya Modal',
+  'Beban Oprasional': 'Beban Operasional'
 };
-
-/* ================================================================
-   DATA DEMO — dipakai jika CSV_URL kosong atau fetch gagal
-   Ganti angka di sini kalau tidak pakai Google Sheets
-================================================================ */
-const DEMO = {
-  bulanan: {
-    labels:       ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'],
-    omzet25:      [58,62,71,65,78,82,75,69,73,88,92,79],
-    omzet24:      [48,51,60,54,65,68,62,57,61,73,76,67],
-    labaKotor25:  [21,23,26,24,29,30,28,25,27,32,34,29],
-    labaKotor24:  [17,18,21,19,23,24,22,20,22,26,28,23],
-    labaBersih25: [12,14,16,15,18,19,17,15,17,20,21,18],
-    labaBersih24: [10,11,13,11,14,15,13,12,14,16,17,15],
-    beban25:      [9,9,10,9,11,11,11,10,10,12,13,11],
-    beban24:      [7,7,8,8,9,9,9,8,8,10,11,9],
-  },
-  kuartal: {
-    labels:       ['Q1','Q2','Q3','Q4'],
-    omzet25:      [191,225,217,259],
-    omzet24:      [159,187,180,216],
-    labaKotor25:  [70,83,80,95],
-    labaKotor24:  [56,66,64,83],
-    labaBersih25: [42,52,49,58],
-    labaBersih24: [34,40,39,51],
-    beban25:      [28,31,31,36],
-    beban24:      [22,26,25,31],
-  }
+const METRIC_COLOR = {
+  'Laba Kotor (Gross Profit)': '#2F6B4F',
+  'Pendapatan Bersih (Net Sales/Revenue)': '#C2933F',
+  'Biaya Modal': '#34566B',
+  'Beban Oprasional': '#AE5639'
 };
-/* ================================================================ */
+const QUARTERS = ['Q1 (JAN-MARCH)','Q2 (APRIL-JUNE)','Q3 (JULY-SEPT)','Q4 (OCT-DES)'];
+const QUARTER_SHORT = ['Q1','Q2','Q3','Q4'];
 
-let LOADED = { bulanan: null, kuartal: null };
-let currentView = 'bulanan';
-let charts = {};
-let usingDemo = false;
+const state = { year: null, data: null };
+const charts = {};
 
-function parseCSV(text) {
-  const rows = text.trim().split('\n').map(r =>
-    r.split(',').map(c => c.replace(/^"|"$/g,'').trim())
-  );
-  const data = rows.slice(1).filter(r => r[COL.label]);
-  return {
-    labels:       data.map(r => r[COL.label]),
-    omzet25:      data.map(r => parseFloat(r[COL.omzet25])      || 0),
-    omzet24:      data.map(r => parseFloat(r[COL.omzet24])      || 0),
-    labaKotor25:  data.map(r => parseFloat(r[COL.labaKotor25])  || 0),
-    labaKotor24:  data.map(r => parseFloat(r[COL.labaKotor24])  || 0),
-    labaBersih25: data.map(r => parseFloat(r[COL.labaBersih25]) || 0),
-    labaBersih24: data.map(r => parseFloat(r[COL.labaBersih24]) || 0),
-    beban25:      data.map(r => parseFloat(r[COL.beban25])      || 0),
-    beban24:      data.map(r => parseFloat(r[COL.beban24])      || 0),
-  };
+function parseRp(val){
+  if(val === undefined || val === null) return null;
+  const s = String(val).trim();
+  if(s === '') return null;
+  const n = parseFloat(s.replace(/Rp|,|\s/g,''));
+  return isNaN(n) ? null : n;
+}
+function parsePct(val){
+  if(val === undefined || val === null) return null;
+  const s = String(val).trim();
+  if(s === '') return null;
+  const n = parseFloat(s.replace(/%|\s/g,''));
+  return isNaN(n) ? null : n;
+}
+function fmtRp(n){
+  if(n === null || n === undefined) return '—';
+  return 'Rp' + Math.round(n).toLocaleString('id-ID');
 }
 
-async function fetchSheet(url) {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error('HTTP ' + res.status);
-  return parseCSV(await res.text());
-}
-
-async function loadAllData() {
-  showState('loading');
-  usingDemo = false;
-
-  if (!CSV_URL_BULANAN && !CSV_URL_KUARTAL) {
-    // Pakai demo
-    usingDemo = true;
-    LOADED = { bulanan: DEMO.bulanan, kuartal: DEMO.kuartal };
-    renderDashboard();
-    return;
-  }
-
-  try {
-    const [b, q] = await Promise.all([
-      CSV_URL_BULANAN ? fetchSheet(CSV_URL_BULANAN) : Promise.resolve(DEMO.bulanan),
-      CSV_URL_KUARTAL ? fetchSheet(CSV_URL_KUARTAL) : Promise.resolve(DEMO.kuartal),
-    ]);
-    LOADED = { bulanan: b, kuartal: q };
-    renderDashboard();
-  } catch(e) {
-    showState('error', 'Fetch gagal: ' + e.message + '. Pastikan URL sudah benar dan Google Sheets sudah di-publish ke web.');
+async function loadData(){
+  try{
+    const res = await fetch(CSV_URL, { cache: 'no-store' });
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    const text = await res.text();
+    const parsed = Papa.parse(text.trim(), { skipEmptyLines: false });
+    processData(parsed.data);
+  }catch(err){
+    showError(err);
   }
 }
 
-function showState(s, msg) {
-  document.getElementById('state-loading').style.display = s === 'loading' ? 'flex' : 'none';
-  document.getElementById('state-error').style.display   = s === 'error'   ? 'flex' : 'none';
-  document.getElementById('dashboard').style.display     = s === 'dash'    ? 'block': 'none';
-  if (msg) document.getElementById('error-msg').textContent = msg;
-}
+function processData(rows){
+  const financial = {};
+  const percent = { Revenue: {}, Beban: {} };
+  let years = ['2025', '2026'];
+  let mode = null;
+  let currentQuarter = null;
+  let percentKey = null;
 
-function sum(arr) { return arr.reduce((a,b) => a+b, 0); }
-function pctChange(a, b) { return b === 0 ? 0 : ((a - b) / b * 100); }
-function fmt(n) { return 'Rp ' + Math.round(n) + ' jt'; }
-function fmtPct(p) { return (p >= 0 ? '+' : '') + p.toFixed(1) + '%'; }
+  for(const row of rows){
+    const label = (row[0] || '').toString().trim();
+    if(!label) continue;
 
-function setBadge(id, pct) {
-  const el = document.getElementById(id);
-  el.textContent = fmtPct(pct);
-  el.className = 'mcard-badge ' + (pct >= 0 ? 'up' : 'down');
-}
-function setYoyBadge(id, pct) {
-  const el = document.getElementById(id);
-  el.textContent = fmtPct(pct);
-  el.className = 'yoy-pct ' + (pct >= 0 ? 'up' : 'down');
-}
+    if(label === 'Periode'){
+      years = [String(row[1]||'2025').trim(), String(row[2]||'2026').trim()];
+      mode = 'financial';
+      continue;
+    }
+    if(label.startsWith('Procentace Revenue')){ mode = 'percent'; percentKey = 'Revenue'; continue; }
+    if(label.startsWith('Procentace Beban')){ mode = 'percent'; percentKey = 'Beban'; continue; }
 
-function renderDashboard() {
-  showState('dash');
+    if(/^Q[1-4]/.test(label)){
+      currentQuarter = label;
+      if(mode === 'financial'){
+        financial[currentQuarter] = {};
+      }else if(mode === 'percent'){
+        percent[percentKey][currentQuarter] = {
+          [years[0]]: parsePct(row[1]),
+          [years[1]]: parsePct(row[2])
+        };
+      }
+      continue;
+    }
 
-  // Setup banner
-  document.getElementById('setup-banner').style.display = usingDemo ? 'flex' : 'none';
-  document.getElementById('data-source-badge').textContent = usingDemo ? 'Demo Data' : 'Google Sheets ✓';
-  document.getElementById('last-updated').textContent = usingDemo
-    ? '' : 'Data diperbarui: ' + new Date().toLocaleString('id-ID');
-
-  buildCharts(currentView);
-  buildTable(currentView);
-}
-
-function buildSummary(view) {
-  const d = LOADED[view];
-  const s25 = { o: sum(d.omzet25), lk: sum(d.labaKotor25), lb: sum(d.labaBersih25), b: sum(d.beban25) };
-  const s24 = { o: sum(d.omzet24), lk: sum(d.labaKotor24), lb: sum(d.labaBersih24), b: sum(d.beban24) };
-  const margin25 = s25.o ? s25.lb / s25.o * 100 : 0;
-  const margin24 = s24.o ? s24.lb / s24.o * 100 : 0;
-
-  // YoY cards
-  document.getElementById('yoy-omzet25').textContent = fmt(s25.o);
-  document.getElementById('yoy-omzet24').textContent = fmt(s24.o);
-  setYoyBadge('yoy-omzet-pct', pctChange(s25.o, s24.o));
-  document.getElementById('yoy-lk25').textContent = fmt(s25.lk);
-  document.getElementById('yoy-lk24').textContent = fmt(s24.lk);
-  setYoyBadge('yoy-lk-pct', pctChange(s25.lk, s24.lk));
-  document.getElementById('yoy-beban25').textContent = fmt(s25.b);
-  document.getElementById('yoy-beban24').textContent = fmt(s24.b);
-  setYoyBadge('yoy-beban-pct', pctChange(s25.b, s24.b));
-  document.getElementById('yoy-lb25').textContent = fmt(s25.lb);
-  document.getElementById('yoy-lb24').textContent = fmt(s24.lb);
-  setYoyBadge('yoy-lb-pct', pctChange(s25.lb, s24.lb));
-
-  // KPI
-  document.getElementById('k-omzet').innerHTML  = Math.round(s25.o) + ' <span>jt</span>';
-  document.getElementById('k-omzet24').textContent = fmt(s24.o);
-  setBadge('kb-omzet', pctChange(s25.o, s24.o));
-  document.getElementById('k-lk').innerHTML = Math.round(s25.lk) + ' <span>jt</span>';
-  document.getElementById('k-lk24').textContent = fmt(s24.lk);
-  setBadge('kb-lk', pctChange(s25.lk, s24.lk));
-  document.getElementById('k-lb').innerHTML = Math.round(s25.lb) + ' <span>jt</span>';
-  document.getElementById('k-lb24').textContent = fmt(s24.lb);
-  setBadge('kb-lb', pctChange(s25.lb, s24.lb));
-  document.getElementById('k-beban').innerHTML = Math.round(s25.b) + ' <span>jt</span>';
-  document.getElementById('k-beban24').textContent = fmt(s24.b);
-  setBadge('kb-beban', pctChange(s25.b, s24.b));
-  document.getElementById('k-margin').innerHTML = margin25.toFixed(1) + ' <span>%</span>';
-  document.getElementById('k-margin24').textContent = margin24.toFixed(1) + '%';
-  setBadge('kb-margin', margin25 - margin24);
-}
-
-function destroyChart(id) { if(charts[id]){ charts[id].destroy(); delete charts[id]; } }
-
-function buildCharts(view) {
-  const d = LOADED[view];
-  buildSummary(view);
-
-  document.getElementById('c1-sub').textContent = view === 'bulanan' ? 'Per bulan — juta rupiah' : 'Per kuartal — juta rupiah';
-  document.getElementById('c2-sub').textContent = view === 'bulanan' ? 'Per bulan — juta rupiah' : 'Per kuartal — juta rupiah';
-
-  destroyChart('c1'); destroyChart('c2'); destroyChart('c3');
-
-  const gridColor = 'rgba(0,0,0,0.05)';
-  const axOpt = (cb) => ({
-    x: { ticks:{ font:{size:11} }, grid:{ display:false } },
-    y: { ticks:{ font:{size:11}, callback: cb }, grid:{ color: gridColor } }
-  });
-
-  charts.c1 = new Chart(document.getElementById('c1'), {
-    type:'bar',
-    data:{ labels: d.labels, datasets:[
-      { label:'2025', data: d.omzet25, backgroundColor:'#378ADD', borderRadius:3 },
-      { label:'2024', data: d.omzet24, backgroundColor:'#B5D4F4', borderRadius:3 }
-    ]},
-    options:{ responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{display:false} },
-      scales: axOpt(v => 'Rp'+v+'jt') }
-  });
-
-  charts.c2 = new Chart(document.getElementById('c2'), {
-    type:'line',
-    data:{ labels: d.labels, datasets:[
-      { label:'Laba Kotor 2025', data: d.labaKotor25, borderColor:'#1D9E75', backgroundColor:'rgba(29,158,117,0.07)', tension:0.35, fill:true, pointRadius:3 },
-      { label:'Laba Kotor 2024', data: d.labaKotor24, borderColor:'#9FE1CB', borderDash:[4,3], tension:0.35, pointRadius:2 },
-      { label:'Laba Bersih 2025', data: d.labaBersih25, borderColor:'#639922', tension:0.35, pointRadius:3 }
-    ]},
-    options:{ responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{display:false} },
-      scales: axOpt(v => v+'jt') }
-  });
-
-  charts.c3 = new Chart(document.getElementById('c3'), {
-    type:'bar',
-    data:{ labels: d.labels, datasets:[
-      { label:'2025', data: d.beban25, backgroundColor:'#D85A30', borderRadius:3 },
-      { label:'2024', data: d.beban24, backgroundColor:'#F5C4B3', borderRadius:3 }
-    ]},
-    options:{ responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{display:false} },
-      scales: axOpt(v => v+'jt') }
-  });
-}
-
-function buildTable(view) {
-  const d = LOADED[view];
-  document.getElementById('table-title').textContent =
-    view === 'bulanan' ? 'Tabel Perbandingan per Bulan' : 'Tabel Perbandingan per Kuartal';
-  let html = '';
-  d.labels.forEach((lbl, i) => {
-    const yoy = pctChange(d.omzet25[i], d.omzet24[i]);
-    const margin = d.omzet25[i] ? (d.labaBersih25[i]/d.omzet25[i]*100).toFixed(1)+'%' : '—';
-    const cls = yoy >= 0 ? 'up' : 'down';
-    const dlt = (d.omzet25[i] >= d.omzet24[i] ? '↑ ' : '↓ ') + Math.abs(d.omzet25[i]-d.omzet24[i]) + ' jt';
-    html += `<tr>
-      <td style="font-weight:600;">${lbl}</td>
-      <td class="num">${fmt(d.omzet25[i])}</td>
-      <td class="num" style="color:#888;">${fmt(d.omzet24[i])}</td>
-      <td class="num"><span class="tbadge ${cls}">${dlt}</span></td>
-      <td class="num">${fmt(d.labaBersih25[i])}</td>
-      <td class="num" style="color:#888;">${fmt(d.labaBersih24[i])}</td>
-      <td class="num">${margin}</td>
-      <td class="num"><span class="tbadge ${cls}">${fmtPct(yoy)}</span></td>
-    </tr>`;
-  });
-  document.getElementById('tbody').innerHTML = html;
-}
-
-function setView(v, btn) {
-  currentView = v;
-  document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  document.getElementById('page-heading').textContent = v === 'bulanan' ? 'Ringkasan Bulanan' : 'Ringkasan Kuartal';
-  buildCharts(v);
-  buildTable(v);
-}
-
-function reloadData() { loadAllData(); }
-
-/* Donut & Stok — static (tidak berubah per view) */
-charts.c4 = new Chart(document.getElementById('c4'), {
-  type:'doughnut',
-  data:{ labels:['Gaji','Sewa','Logistik','Lain-lain'],
-    datasets:[{ data:[38,25,20,17], backgroundColor:['#378ADD','#1D9E75','#EF9F27','#D85A30'], borderWidth:0, hoverOffset:6 }]
-  },
-  options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false} }, cutout:'58%' }
-});
-charts.c5 = new Chart(document.getElementById('c5'), {
-  type:'bar',
-  data:{ labels:['Elektronik','Fashion','Makanan','Perabot','Kosmetik'],
-    datasets:[
-      { label:'2025', data:[240,185,320,95,160], backgroundColor:'#378ADD', borderRadius:3 },
-      { label:'2024', data:[195,160,270,80,130], backgroundColor:'#B5D4F4', borderRadius:3 }
-    ]
-  },
-  options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false} },
-    scales:{ x:{ ticks:{font:{size:11}}, grid:{display:false} }, y:{ ticks:{font:{size:11}, callback: v => v+' unit'}, grid:{color:'rgba(0,0,0,0.05)'} } }
+    if(mode === 'financial' && currentQuarter && METRICS.includes(label)){
+      financial[currentQuarter][label] = {
+        [years[0]]: parseRp(row[1]),
+        [years[1]]: parseRp(row[2])
+      };
+    }
   }
-});
 
-loadAllData();
+  state.data = { years, financial, percent };
+  state.year = years[0];
+  init();
+}
+
+function init(){
+  document.getElementById('loadingOverlay').remove();
+  document.getElementById('mainContent').hidden = false;
+  buildPeriodTabs();
+  document.getElementById('th-y1').textContent = state.data.years[0];
+  document.getElementById('th-y2').textContent = state.data.years[1];
+  render();
+
+  const updated = new Date().toLocaleString('id-ID', { dateStyle: 'long', timeStyle: 'short' });
+  document.getElementById('footerNote').textContent = 'Data diambil langsung dari spreadsheet · diperbarui ' + updated;
+}
+
+function buildPeriodTabs(){
+  const wrap = document.getElementById('periodTabs');
+  wrap.innerHTML = '';
+  state.data.years.forEach((y, i) => {
+    const btn = document.createElement('button');
+    btn.textContent = y;
+    if(i === 0) btn.classList.add('active');
+    btn.addEventListener('click', () => {
+      state.year = y;
+      wrap.querySelectorAll('button').forEach(b => b.classList.toggle('active', b === btn));
+      render();
+    });
+    wrap.appendChild(btn);
+  });
+}
+
+function totalFor(metric, year){
+  return QUARTERS.reduce((sum, q) => {
+    const v = state.data.financial[q] && state.data.financial[q][metric] ? state.data.financial[q][metric][year] : null;
+    return sum + (v || 0);
+  }, 0);
+}
+
+function quarterSeries(metric, year){
+  return QUARTERS.map(q => {
+    const v = state.data.financial[q] && state.data.financial[q][metric] ? state.data.financial[q][metric][year] : null;
+    return v;
+  });
+}
+
+function render(){
+  const [y1, y2] = state.data.years;
+  const otherYear = state.year === y1 ? y2 : y1;
+
+  // Hero
+  const revKey = 'Pendapatan Bersih (Net Sales/Revenue)';
+  const revTotal = totalFor(revKey, state.year);
+  document.getElementById('heroRevenue').textContent = fmtRp(revTotal);
+  document.getElementById('heroSub').textContent = 'Akumulasi Q1–Q4 · ' + state.year;
+
+  const revOther = totalFor(revKey, otherYear);
+  const stamp = document.getElementById('yoyStamp');
+  const yoyValue = document.getElementById('yoyValue');
+  if(revOther > 0){
+    const change = ((revTotal - revOther) / revOther) * 100;
+    yoyValue.textContent = (change >= 0 ? '+' : '') + change.toFixed(1) + '%';
+    stamp.classList.toggle('positive', change >= 0);
+    stamp.classList.toggle('negative', change < 0);
+  }else{
+    yoyValue.textContent = '—';
+    stamp.classList.remove('positive','negative');
+  }
+
+  // KPI cards
+  renderKpi('kpi-pendapatan', 'spark-pendapatan', revKey, METRIC_COLOR[revKey]);
+  renderKpi('kpi-laba', 'spark-laba', 'Laba Kotor (Gross Profit)', METRIC_COLOR['Laba Kotor (Gross Profit)']);
+  renderKpi('kpi-modal', 'spark-modal', 'Biaya Modal', METRIC_COLOR['Biaya Modal']);
+  renderKpi('kpi-beban', 'spark-beban', 'Beban Oprasional', METRIC_COLOR['Beban Oprasional']);
+
+  // Quarterly grouped chart
+  renderQuarterlyChart();
+
+  // Percentage charts
+  renderPercentChart('revenuePctChart', state.data.percent.Revenue, 'Revenue');
+  renderPercentChart('bebanPctChart', state.data.percent.Beban, 'Beban');
+
+  // Ledger table
+  buildLedgerTable();
+}
+
+function renderKpi(valueId, sparkId, metricKey, color){
+  const total = totalFor(metricKey, state.year);
+  document.getElementById(valueId).textContent = fmtRp(total);
+
+  const series = quarterSeries(metricKey, state.year).map(v => v || 0);
+  const ctx = document.getElementById(sparkId);
+  if(charts[sparkId]) charts[sparkId].destroy();
+  charts[sparkId] = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: QUARTER_SHORT,
+      datasets: [{ data: series, backgroundColor: color, borderRadius: 3 }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { enabled: false } },
+      scales: {
+        x: { display: false },
+        y: { display: false }
+      }
+    }
+  });
+}
+
+function renderQuarterlyChart(){
+  const ctx = document.getElementById('quarterlyChart');
+  document.getElementById('quarterlySub').textContent =
+    'Laba kotor, pendapatan bersih, biaya modal & beban operasional — tahun ' + state.year;
+
+  const datasets = METRICS.map(m => ({
+    label: METRIC_SHORT[m],
+    data: quarterSeries(m, state.year),
+    backgroundColor: METRIC_COLOR[m],
+    borderRadius: 4
+  }));
+
+  if(charts.quarterly) charts.quarterly.destroy();
+  charts.quarterly = new Chart(ctx, {
+    type: 'bar',
+    data: { labels: QUARTER_SHORT, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { position: 'bottom', labels: { font: { family: "'Plus Jakarta Sans'" } } },
+        tooltip: {
+          callbacks: {
+            label: ctx => `${ctx.dataset.label}: ${fmtRp(ctx.raw)}`
+          }
+        }
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { family: "'IBM Plex Mono'" } } },
+        y: {
+          grid: { color: '#D6D0BD' },
+          ticks: {
+            font: { family: "'IBM Plex Mono'" },
+            callback: v => 'Rp' + (v/1000000).toFixed(0) + 'jt'
+          }
+        }
+      }
+    }
+  });
+}
+
+function renderPercentChart(canvasId, dataSource, key){
+  const [y1, y2] = state.data.years;
+  const series1 = QUARTERS.map(q => dataSource[q] ? dataSource[q][y1] : null);
+  const series2 = QUARTERS.map(q => dataSource[q] ? dataSource[q][y2] : null);
+
+  if(charts[canvasId]) charts[canvasId].destroy();
+  charts[canvasId] = new Chart(document.getElementById(canvasId), {
+    type: 'line',
+    data: {
+      labels: QUARTER_SHORT,
+      datasets: [
+        {
+          label: y1,
+          data: series1,
+          borderColor: '#34566B',
+          backgroundColor: '#34566B',
+          tension: .3,
+          spanGaps: true
+        },
+        {
+          label: y2,
+          data: series2,
+          borderColor: '#C2933F',
+          backgroundColor: '#C2933F',
+          tension: .3,
+          spanGaps: true
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', labels: { font: { family: "'Plus Jakarta Sans'" } } },
+        tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.raw === null ? '—' : ctx.raw + '%'}` } }
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { family: "'IBM Plex Mono'" } } },
+        y: { grid: { color: '#D6D0BD' }, ticks: { font: { family: "'IBM Plex Mono'" }, callback: v => v + '%' } }
+      }
+    }
+  });
+}
+
+function buildLedgerTable(){
+  const [y1, y2] = state.data.years;
+  const tbody = document.querySelector('#ledgerTable tbody');
+  tbody.innerHTML = '';
+
+  QUARTERS.forEach((q, qi) => {
+    METRICS.forEach((m, mi) => {
+      const vals = (state.data.financial[q] && state.data.financial[q][m]) || {};
+      const tr = document.createElement('tr');
+      if(mi === 0) tr.classList.add('quarter-start');
+      tr.innerHTML = `
+        <td class="q-label">${mi === 0 ? QUARTER_SHORT[qi] : ''}</td>
+        <td>${METRIC_SHORT[m]}</td>
+        <td class="num">${fmtRp(vals[y1])}</td>
+        <td class="num">${fmtRp(vals[y2])}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  });
+
+  // Totals row
+  const tr = document.createElement('tr');
+  tr.classList.add('total-row');
+  tr.innerHTML = `
+    <td class="q-label">Total</td>
+    <td>Pendapatan Bersih</td>
+    <td class="num">${fmtRp(totalFor('Pendapatan Bersih (Net Sales/Revenue)', y1))}</td>
+    <td class="num">${fmtRp(totalFor('Pendapatan Bersih (Net Sales/Revenue)', y2))}</td>
+  `;
+  tbody.appendChild(tr);
+}
+
+function showError(err){
+  document.getElementById('loadingOverlay').remove();
+  const banner = document.getElementById('errorBanner');
+  banner.hidden = false;
+  banner.innerHTML = `
+    <strong>Data tidak dapat dimuat.</strong>
+    Pastikan link CSV masih bisa diakses publik (File → Bagikan → Publikasikan ke web → CSV).
+    <code>${CSV_URL}</code>
+    <div style="margin-top:8px; font-family:'Plex Jakarta Sans',sans-serif;">Detail: ${err.message}</div>
+  `;
+}
+
+loadData();
 </script>
 </body>
 </html>
