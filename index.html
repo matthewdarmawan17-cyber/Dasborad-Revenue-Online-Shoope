@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Inter+Tight:wght@500;600;700;800&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <style>
   :root{
@@ -25,8 +25,6 @@
     --red-soft: #FCEAE9;
     --amber: #F0A93E;
     --amber-soft: #FDF2E1;
-    --teal: #0EA5A5;
-    --teal-soft: #E4F6F6;
     --radius-lg: 16px;
     --radius-md: 12px;
     --shadow: 0 1px 2px rgba(20,23,43,0.04), 0 8px 24px -12px rgba(20,23,43,0.08);
@@ -81,7 +79,7 @@
     margin-top: 1px;
   }
 
-  .period-tabs{
+  .nav-tabs{
     display:flex;
     background: var(--surface);
     border: 1px solid var(--border);
@@ -89,7 +87,7 @@
     padding: 4px;
     box-shadow: var(--shadow);
   }
-  .period-tabs button{
+  .nav-tabs button{
     font-family: 'Inter', sans-serif;
     font-size: 13.5px;
     font-weight: 600;
@@ -101,10 +99,10 @@
     cursor: pointer;
     transition: background .15s, color .15s;
   }
-  .period-tabs button.active{ background: var(--primary); color: #fff; }
-  .period-tabs button:focus-visible{ outline: 2px solid var(--primary); outline-offset: 2px; }
+  .nav-tabs button.active{ background: var(--primary); color: #fff; }
+  .nav-tabs button:focus-visible{ outline: 2px solid var(--primary); outline-offset: 2px; }
 
-  /* ---------- KPI grid ---------- */
+  /* ---------- Grids ---------- */
   .kpi-grid{
     display:grid;
     grid-template-columns: repeat(4, 1fr);
@@ -155,13 +153,13 @@
   }
   .kpi-value{
     font-family: 'Inter Tight', sans-serif;
-    font-size: 26px;
+    font-size: 24px;
     font-weight: 700;
     letter-spacing: -.01em;
     font-feature-settings: "tnum";
+    word-break: break-all;
   }
 
-  /* ---------- Grids ---------- */
   .main-grid{
     display:grid;
     grid-template-columns: 1.4fr 1fr;
@@ -171,7 +169,7 @@
   }
   .ratio-grid{
     display:grid;
-    grid-template-columns: 1.4fr 1fr;
+    grid-template-columns: 1fr 1fr;
     gap: 16px;
     margin-bottom: 20px;
     align-items: stretch;
@@ -203,19 +201,21 @@
   }
 
   .chart-card canvas{ max-height: 300px; }
+  .chart-card.tall canvas{ max-height: 340px; }
 
   /* Composition / breakdown card */
   .breakdown-list{ display:flex; flex-direction: column; gap: 14px; }
   .breakdown-row{ display:flex; flex-direction: column; gap: 6px; }
   .breakdown-top{
     display:flex; justify-content: space-between; align-items:baseline;
-    font-size: 13.5px;
+    font-size: 13.5px; gap: 12px;
   }
   .breakdown-top .name{ font-weight: 600; color: var(--text); }
   .breakdown-top .val{
     font-family: 'Inter Tight', sans-serif;
     font-weight: 700;
     font-feature-settings: "tnum";
+    white-space: nowrap;
   }
   .breakdown-bar{
     height: 8px;
@@ -235,60 +235,77 @@
     display:flex;
     justify-content: space-between;
     align-items: center;
+    gap: 12px;
   }
   .breakdown-foot .label{ font-size: 13px; color: var(--text-soft); font-weight: 500; }
   .breakdown-foot .value{
     font-family: 'Inter Tight', sans-serif;
-    font-size: 20px;
+    font-size: 18px;
     font-weight: 700;
+    white-space: nowrap;
   }
   .breakdown-foot .value.positive{ color: var(--green); }
   .breakdown-foot .value.negative{ color: var(--red); }
 
   /* Target vs realisasi card */
-  .stat-compare{
-    display:flex;
+  .growth-grid{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
     gap: 16px;
   }
-  .stat-block{
-    flex: 1;
+  .growth-col{
     background: var(--bg);
     border-radius: var(--radius-md);
     padding: 16px;
+  }
+  .growth-col h3{
+    font-size: 13px;
+    font-weight: 700;
+    margin: 0 0 12px;
+    text-align:center;
+  }
+  .stat-compare{ display:flex; gap: 10px; }
+  .stat-block{
+    flex: 1;
+    background: var(--surface);
+    border-radius: var(--radius-md);
+    padding: 14px;
     text-align: center;
+    border: 1px solid var(--border);
   }
   .stat-block .stat-label{
-    font-size: 12.5px;
+    font-size: 12px;
     color: var(--text-soft);
     font-weight: 500;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
   }
   .stat-block .stat-value{
     font-family: 'Inter Tight', sans-serif;
-    font-size: 28px;
+    font-size: 22px;
     font-weight: 700;
     font-feature-settings: "tnum";
   }
   .stat-verdict{
-    margin-top: 16px;
+    margin-top: 12px;
     display:flex;
     align-items:center;
+    justify-content: center;
     gap: 8px;
-    font-size: 13px;
+    font-size: 12.5px;
     color: var(--text-soft);
-    padding-top: 14px;
-    border-top: 1px solid var(--border);
+    text-align: center;
   }
   .stat-verdict .pill{
     display:inline-flex; align-items:center; gap:4px;
-    font-size: 12.5px; font-weight: 600;
+    font-size: 12px; font-weight: 600;
     padding: 3px 9px; border-radius: 999px;
+    white-space: nowrap;
   }
   .stat-verdict .pill.up{ color: var(--green); background: var(--green-soft); }
   .stat-verdict .pill.down{ color: var(--red); background: var(--red-soft); }
   .stat-verdict .pill svg{ width: 12px; height: 12px; }
 
-  /* Margin badges under realisasi chart */
+  /* Margin badges */
   .margin-row{
     display:grid;
     grid-template-columns: repeat(4, 1fr);
@@ -352,7 +369,16 @@
   tbody tr.total-row{ background: var(--bg); font-weight: 700; }
   tbody tr.total-row td{ border-bottom: none; }
 
-  .section-spacer{ height: 4px; }
+  .section-title{
+    font-family: 'Inter Tight', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--text-faint);
+    margin: 28px 0 12px;
+  }
+  .section-title:first-child{ margin-top: 0; }
 
   /* ---------- Footer / states ---------- */
   footer{
@@ -397,11 +423,10 @@
     word-break: break-all;
     color: #9B3530;
   }
-  #errorBanner ul{ margin: 10px 0 0; padding-left: 20px; }
 
   @media (max-width: 1024px){
     .kpi-grid{ grid-template-columns: repeat(2, 1fr); }
-    .main-grid, .ratio-grid{ grid-template-columns: 1fr; }
+    .main-grid, .ratio-grid, .growth-grid{ grid-template-columns: 1fr; }
   }
   @media (max-width: 560px){
     .kpi-grid{ grid-template-columns: 1fr; }
@@ -418,7 +443,7 @@
 
 <div id="loadingOverlay">
   <div class="spinner"></div>
-  <div>Mengambil data dari OneDrive…</div>
+  <div>Memuat data keuangan…</div>
 </div>
 
 <div class="page">
@@ -433,148 +458,158 @@
         <span>Dashboard Laporan Keuangan</span>
       </div>
     </div>
-    <div class="period-tabs" id="periodTabs"></div>
+    <div class="nav-tabs" id="navTabs"></div>
   </header>
 
   <div id="errorBanner" hidden></div>
 
   <main id="mainContent" hidden>
 
-    <section class="kpi-grid">
-      <article class="kpi-card">
-        <div class="kpi-top">
-          <div class="kpi-icon primary">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-          </div>
-          <span class="kpi-trend" id="trend-pendapatan"></span>
-        </div>
-        <p class="kpi-label">Pendapatan Bersih</p>
-        <div class="kpi-value" id="kpi-pendapatan">Rp0</div>
-      </article>
+    <!-- ===================== RINGKASAN (PERSENTASE) ===================== -->
+    <section id="overviewView">
 
-      <article class="kpi-card">
-        <div class="kpi-top">
-          <div class="kpi-icon green">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+      <div class="ratio-grid">
+        <div class="card chart-card">
+          <div class="card-head">
+            <div>
+              <h2>Procentace Revenue</h2>
+              <p>Perbandingan rasio per kuartal, 2025 vs 2026</p>
+            </div>
           </div>
-          <span class="kpi-trend" id="trend-laba"></span>
+          <canvas id="revenuePctChart"></canvas>
         </div>
-        <p class="kpi-label">Laba Kotor</p>
-        <div class="kpi-value" id="kpi-laba">Rp0</div>
-      </article>
-
-      <article class="kpi-card">
-        <div class="kpi-top">
-          <div class="kpi-icon amber">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+        <div class="card chart-card">
+          <div class="card-head">
+            <div>
+              <h2>Procentace Beban Oprasional</h2>
+              <p>Perbandingan rasio per kuartal, 2025 vs 2026</p>
+            </div>
           </div>
-          <span class="kpi-trend" id="trend-modal"></span>
+          <canvas id="bebanPctChart"></canvas>
         </div>
-        <p class="kpi-label">Biaya Modal</p>
-        <div class="kpi-value" id="kpi-modal">Rp0</div>
-      </article>
-
-      <article class="kpi-card">
-        <div class="kpi-top">
-          <div class="kpi-icon red">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l2.5 2.5"/></svg>
-          </div>
-          <span class="kpi-trend" id="trend-beban"></span>
-        </div>
-        <p class="kpi-label">Beban Operasional</p>
-        <div class="kpi-value" id="kpi-beban">Rp0</div>
-      </article>
-    </section>
-
-    <section class="main-grid">
-      <div class="card chart-card">
-        <div class="card-head">
-          <div>
-            <h2>Performa per Kuartal</h2>
-            <p id="quarterlySub">Perbandingan empat pos keuangan</p>
-          </div>
-        </div>
-        <canvas id="quarterlyChart"></canvas>
       </div>
 
-      <div class="card">
-        <div class="card-head">
-          <div>
-            <h2>Komposisi Tahunan</h2>
-            <p id="breakdownSub">Proporsi pos terhadap pendapatan</p>
-          </div>
-        </div>
-        <div class="breakdown-list" id="breakdownList"></div>
-        <div class="breakdown-foot">
-          <span class="label">Estimasi Laba Bersih</span>
-          <span class="value" id="netProfit">Rp0</span>
-        </div>
-      </div>
-    </section>
-
-    <section class="ratio-grid">
-      <div class="card chart-card">
-        <div class="card-head">
-          <div>
-            <h2>Rasio Kinerja per Kuartal</h2>
-            <p id="ratioSub">Procentace Revenue vs Beban Operasional</p>
-          </div>
-        </div>
-        <canvas id="ratioChart"></canvas>
-      </div>
-
-      <div class="card">
+      <div class="card" style="margin-bottom:20px;">
         <div class="card-head">
           <div>
             <h2>Target vs Realisasi Pertumbuhan</h2>
-            <p id="growthSub">Pertumbuhan keuntungan dari tahun sebelumnya</p>
+            <p>Pertumbuhan keuntungan dibanding tahun sebelumnya</p>
           </div>
         </div>
-        <div class="stat-compare">
-          <div class="stat-block">
-            <div class="stat-label">Target</div>
-            <div class="stat-value" id="targetGrowth">—</div>
-          </div>
-          <div class="stat-block">
-            <div class="stat-label">Realisasi</div>
-            <div class="stat-value" id="realisasiGrowth">—</div>
-          </div>
-        </div>
-        <div class="stat-verdict" id="growthVerdict"></div>
+        <div class="growth-grid" id="growthGrid"></div>
       </div>
+
+      <div class="card chart-card tall">
+        <div class="card-head">
+          <div>
+            <h2 id="realisasiTitle">Realisasi vs Target Revenue</h2>
+            <p>Target, realisasi, dan margin per kuartal (dalam %)</p>
+          </div>
+        </div>
+        <canvas id="realisasiChart"></canvas>
+        <div class="margin-row" id="marginRow"></div>
+      </div>
+
     </section>
 
-    <section class="card chart-card" id="realisasiSection" style="margin-bottom:20px;">
-      <div class="card-head">
-        <div>
-          <h2 id="realisasiTitle">Realisasi vs Target Revenue</h2>
-          <p>Target, realisasi, dan margin per kuartal</p>
-        </div>
-      </div>
-      <canvas id="realisasiChart"></canvas>
-      <div class="margin-row" id="marginRow"></div>
-    </section>
+    <!-- ===================== DETAIL PER TAHUN ===================== -->
+    <section id="detailView" hidden>
 
-    <section class="card">
-      <div class="card-head">
-        <div>
-          <h2>Rincian Lengkap</h2>
-          <p>Semua pos per kuartal &amp; tahun</p>
+      <div class="section-title" id="detailYearLabel">Detail Tahun</div>
+
+      <section class="kpi-grid">
+        <article class="kpi-card">
+          <div class="kpi-top">
+            <div class="kpi-icon primary">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            </div>
+            <span class="kpi-trend" id="trend-pendapatan"></span>
+          </div>
+          <p class="kpi-label">Pendapatan Bersih</p>
+          <div class="kpi-value" id="kpi-pendapatan">Rp0</div>
+        </article>
+
+        <article class="kpi-card">
+          <div class="kpi-top">
+            <div class="kpi-icon green">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+            </div>
+            <span class="kpi-trend" id="trend-laba"></span>
+          </div>
+          <p class="kpi-label">Laba Kotor</p>
+          <div class="kpi-value" id="kpi-laba">Rp0</div>
+        </article>
+
+        <article class="kpi-card">
+          <div class="kpi-top">
+            <div class="kpi-icon amber">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+            </div>
+            <span class="kpi-trend" id="trend-modal"></span>
+          </div>
+          <p class="kpi-label">Biaya Modal</p>
+          <div class="kpi-value" id="kpi-modal">Rp0</div>
+        </article>
+
+        <article class="kpi-card">
+          <div class="kpi-top">
+            <div class="kpi-icon red">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l2.5 2.5"/></svg>
+            </div>
+            <span class="kpi-trend" id="trend-beban"></span>
+          </div>
+          <p class="kpi-label">Beban Operasional</p>
+          <div class="kpi-value" id="kpi-beban">Rp0</div>
+        </article>
+      </section>
+
+      <section class="main-grid">
+        <div class="card chart-card">
+          <div class="card-head">
+            <div>
+              <h2>Performa per Kuartal</h2>
+              <p id="quarterlySub">Perbandingan empat pos keuangan</p>
+            </div>
+          </div>
+          <canvas id="quarterlyChart"></canvas>
         </div>
-      </div>
-      <div class="table-wrap">
-        <table id="ledgerTable">
-          <thead>
-            <tr>
-              <th>Kuartal</th>
-              <th>Pos</th>
-              <th class="num" id="th-y1">2025</th>
-              <th class="num" id="th-y2">2026</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
+
+        <div class="card">
+          <div class="card-head">
+            <div>
+              <h2>Komposisi Tahunan</h2>
+              <p id="breakdownSub">Proporsi pos terhadap pendapatan</p>
+            </div>
+          </div>
+          <div class="breakdown-list" id="breakdownList"></div>
+          <div class="breakdown-foot">
+            <span class="label">Estimasi Laba Bersih</span>
+            <span class="value" id="netProfit">Rp0</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <div>
+            <h2>Rincian Lengkap</h2>
+            <p id="ledgerSub">Semua pos per kuartal</p>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table id="ledgerTable">
+            <thead>
+              <tr>
+                <th>Kuartal</th>
+                <th>Pos</th>
+                <th class="num" id="th-y">Nilai</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+
     </section>
 
   </main>
@@ -584,15 +619,7 @@
 </div>
 
 <script>
-// Link Excel OneDrive (sudah dienkode dari link "Anyone with the link can view")
-// Jika link share berubah, ganti ONEDRIVE_SHARE_URL lalu encoded URL akan dihitung ulang otomatis.
-const ONEDRIVE_SHARE_URL = "https://1drv.ms/x/c/9a1271b4e3e8adbf/IQBU4QcNSM6SSovX0cTIP_YOAdv_2c30JdGvhVroRBpvm7c?e=CBdeoQ";
-
-function encodeOneDriveShareUrl(shareUrl){
-  let b64 = btoa(shareUrl).replace(/\//g, '_').replace(/\+/g, '-').replace(/=+$/, '');
-  return 'u!' + b64;
-}
-const ONEDRIVE_CONTENT_URL = "https://api.onedrive.com/v1.0/shares/" + encodeOneDriveShareUrl(ONEDRIVE_SHARE_URL) + "/root/content";
+const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ52cIawj9uVVP2N5tCkDOqTpsSK9A5OBCOcOpUgZFVONI-wMmfJKjJ_zKi_GgZ1bHFU1gW9N1jgMgB/pub?output=csv";
 
 const METRICS = [
   'Laba Kotor (Gross Profit)',
@@ -615,20 +642,18 @@ const METRIC_COLOR = {
 const QUARTERS = ['Q1 (JAN-MARCH)','Q2 (APRIL-JUNE)','Q3 (JULY-SEPT)','Q4 (OCT-DES)'];
 const QUARTER_SHORT = ['Q1','Q2','Q3','Q4'];
 
-const state = { year: null, data: null };
+const state = { view: 'overview', data: null };
 const charts = {};
 
-function toNumber(val){
-  if(val === '' || val === null || val === undefined) return null;
-  if(typeof val === 'number') return val;
+function parseRp(val){
+  if(val === undefined || val === null) return null;
   const s = String(val).trim();
   if(s === '' || s === '-') return null;
   const n = parseFloat(s.replace(/Rp|,|\s/g,''));
   return isNaN(n) ? null : n;
 }
-function toPercent(val){
-  if(val === '' || val === null || val === undefined) return null;
-  if(typeof val === 'number') return val * 100;
+function parsePct(val){
+  if(val === undefined || val === null) return null;
   const s = String(val).trim();
   if(s === '' || s === '-') return null;
   const n = parseFloat(s.replace(/%|\s/g,''));
@@ -640,26 +665,24 @@ function fmtRp(n){
 }
 function fmtPct(n){
   if(n === null || n === undefined) return '—';
-  return (n >= 0 ? '' : '') + n.toFixed(2) + '%';
+  return n.toFixed(2) + '%';
 }
 const upIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>';
 const downIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
 
 async function loadData(){
   try{
-    const res = await fetch(ONEDRIVE_CONTENT_URL);
+    const res = await fetch(CSV_URL, { cache: 'no-store' });
     if(!res.ok) throw new Error('HTTP ' + res.status);
-    const buffer = await res.arrayBuffer();
-    const workbook = XLSX.read(buffer, { type: 'array' });
-    const sheet = workbook.Sheets[workbook.SheetNames[0]];
-    const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
-    processWorkbook(rows);
+    const text = await res.text();
+    const parsed = Papa.parse(text.trim(), { skipEmptyLines: false });
+    processData(parsed.data);
   }catch(err){
     showError(err);
   }
 }
 
-function processWorkbook(rows){
+function processData(rows){
   const financial = {};
   const percentRevenue = {};
   const percentBeban = {};
@@ -693,54 +716,52 @@ function processWorkbook(rows){
       if(mode === 'financial'){
         financial[currentQuarter] = {};
       }else if(mode === 'percentRevenue'){
-        percentRevenue[currentQuarter] = { [years[0]]: toPercent(row[1]), [years[1]]: toPercent(row[2]) };
+        percentRevenue[currentQuarter] = { [years[0]]: parsePct(row[1]), [years[1]]: parsePct(row[2]) };
       }else if(mode === 'percentBeban'){
-        percentBeban[currentQuarter] = { [years[0]]: toPercent(row[1]), [years[1]]: toPercent(row[2]) };
+        percentBeban[currentQuarter] = { [years[0]]: parsePct(row[1]), [years[1]]: parsePct(row[2]) };
       }else if(mode === 'quarterlyRealisasi'){
         quarterlyRealisasi[currentQuarter] = {
-          target: toPercent(row[1]),
-          realisasi: toPercent(row[2]),
-          margin: toPercent(row[3])
+          target: parsePct(row[1]),
+          realisasi: parsePct(row[2]),
+          margin: parsePct(row[3])
         };
       }
       continue;
     }
 
     if(mode === 'financial' && currentQuarter && METRICS.includes(label)){
-      financial[currentQuarter][label] = { [years[0]]: toNumber(row[1]), [years[1]]: toNumber(row[2]) };
+      financial[currentQuarter][label] = { [years[0]]: parseRp(row[1]), [years[1]]: parseRp(row[2]) };
     }
     if(mode === 'target'){
-      target[label] = { [years[0]]: toPercent(row[1]), [years[1]]: toPercent(row[2]) };
+      target[label] = { [years[0]]: parsePct(row[1]), [years[1]]: parsePct(row[2]) };
     }
   }
 
   state.data = { years, financial, percentRevenue, percentBeban, target, quarterlyRealisasi, realisasiLabel };
-  state.year = years[0];
   init();
 }
 
 function init(){
   document.getElementById('loadingOverlay').remove();
   document.getElementById('mainContent').hidden = false;
-  buildPeriodTabs();
-  document.getElementById('th-y1').textContent = state.data.years[0];
-  document.getElementById('th-y2').textContent = state.data.years[1];
+  buildNavTabs();
   document.getElementById('realisasiTitle').textContent = state.data.realisasiLabel;
   render();
 
   const updated = new Date().toLocaleString('id-ID', { dateStyle: 'long', timeStyle: 'short' });
-  document.getElementById('footerNote').textContent = 'Data diambil langsung dari Excel OneDrive · diperbarui ' + updated;
+  document.getElementById('footerNote').textContent = 'Data diambil langsung dari spreadsheet · diperbarui ' + updated;
 }
 
-function buildPeriodTabs(){
-  const wrap = document.getElementById('periodTabs');
+function buildNavTabs(){
+  const wrap = document.getElementById('navTabs');
   wrap.innerHTML = '';
-  state.data.years.forEach((y, i) => {
+  const tabs = [{ id: 'overview', label: 'Ringkasan' }, ...state.data.years.map(y => ({ id: y, label: y }))];
+  tabs.forEach(tab => {
     const btn = document.createElement('button');
-    btn.textContent = y;
-    if(i === 0) btn.classList.add('active');
+    btn.textContent = tab.label;
+    if(tab.id === state.view) btn.classList.add('active');
     btn.addEventListener('click', () => {
-      state.year = y;
+      state.view = tab.id;
       wrap.querySelectorAll('button').forEach(b => b.classList.toggle('active', b === btn));
       render();
     });
@@ -780,18 +801,161 @@ function setTrend(elId, current, previous){
 }
 
 function render(){
+  const isOverview = state.view === 'overview';
+  document.getElementById('overviewView').hidden = !isOverview;
+  document.getElementById('detailView').hidden = isOverview;
+
+  if(isOverview){
+    renderRatioCharts();
+    renderGrowthCards();
+    renderRealisasiChart();
+  }else{
+    renderDetail(state.view);
+  }
+}
+
+/* ===================== OVERVIEW (PERCENTAGE) ===================== */
+
+function renderRatioCharts(){
   const [y1, y2] = state.data.years;
-  const otherYear = state.year === y1 ? y2 : y1;
+
+  function build(canvasId, source){
+    const ctx = document.getElementById(canvasId);
+    const series1 = QUARTERS.map(q => source[q] ? source[q][y1] : null);
+    const series2 = QUARTERS.map(q => source[q] ? source[q][y2] : null);
+    if(charts[canvasId]) charts[canvasId].destroy();
+    charts[canvasId] = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: QUARTER_SHORT,
+        datasets: [
+          { label: y1, data: series1, borderColor: '#4C5FFF', backgroundColor: '#4C5FFF', tension: .3, spanGaps: true },
+          { label: y2, data: series2, borderColor: '#F0A93E', backgroundColor: '#F0A93E', tension: .3, spanGaps: true }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom', labels: { font: { family: "'Inter'", size: 12.5 }, boxWidth: 10, boxHeight: 10, usePointStyle: true, pointStyle: 'circle' } },
+          tooltip: {
+            backgroundColor: '#14172B', padding: 10, cornerRadius: 8,
+            callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.raw === null ? '—' : ctx.raw.toFixed(2) + '%'}` }
+          }
+        },
+        scales: {
+          x: { grid: { display: false }, ticks: { font: { family: "'Inter'", weight: '600' } } },
+          y: { grid: { color: '#EEF0F5' }, border: { display: false }, ticks: { font: { family: "'Inter'" }, callback: v => v + '%' } }
+        }
+      }
+    });
+  }
+
+  build('revenuePctChart', state.data.percentRevenue);
+  build('bebanPctChart', state.data.percentBeban);
+}
+
+function renderGrowthCards(){
+  const grid = document.getElementById('growthGrid');
+  const targetEntry = Object.keys(state.data.target).find(k => k.toLowerCase().includes('target'));
+  const realisasiEntry = Object.keys(state.data.target).find(k => k.toLowerCase().includes('realisasi'));
+
+  grid.innerHTML = state.data.years.map(year => {
+    const targetVal = targetEntry ? state.data.target[targetEntry][year] : null;
+    const realisasiVal = realisasiEntry ? state.data.target[realisasiEntry][year] : null;
+
+    let verdict = `<span>Realisasi belum tersedia untuk tahun ${year}.</span>`;
+    if(targetVal !== null && realisasiVal !== null){
+      const diff = realisasiVal - targetVal;
+      const achieved = diff >= 0;
+      verdict = `
+        <span class="pill ${achieved ? 'up' : 'down'}">${achieved ? upIcon : downIcon} ${Math.abs(diff).toFixed(2)} poin</span>
+        <span>${achieved ? 'di atas target' : 'di bawah target'}</span>
+      `;
+    }
+
+    return `
+      <div class="growth-col">
+        <h3>Tahun ${year}</h3>
+        <div class="stat-compare">
+          <div class="stat-block">
+            <div class="stat-label">Target</div>
+            <div class="stat-value">${fmtPct(targetVal)}</div>
+          </div>
+          <div class="stat-block">
+            <div class="stat-label">Realisasi</div>
+            <div class="stat-value">${fmtPct(realisasiVal)}</div>
+          </div>
+        </div>
+        <div class="stat-verdict">${verdict}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderRealisasiChart(){
+  const ctx = document.getElementById('realisasiChart');
+  const targetSeries = QUARTERS.map(q => state.data.quarterlyRealisasi[q] ? state.data.quarterlyRealisasi[q].target : null);
+  const realisasiSeries = QUARTERS.map(q => state.data.quarterlyRealisasi[q] ? state.data.quarterlyRealisasi[q].realisasi : null);
+  const marginSeries = QUARTERS.map(q => state.data.quarterlyRealisasi[q] ? state.data.quarterlyRealisasi[q].margin : null);
+
+  if(charts.realisasi) charts.realisasi.destroy();
+  charts.realisasi = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: QUARTER_SHORT,
+      datasets: [
+        { label: 'Target', data: targetSeries, backgroundColor: '#C9CDF0', borderRadius: 6, maxBarThickness: 48 },
+        { label: 'Realisasi', data: realisasiSeries, backgroundColor: '#4C5FFF', borderRadius: 6, maxBarThickness: 48 }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', labels: { font: { family: "'Inter'", size: 12.5 }, boxWidth: 10, boxHeight: 10, usePointStyle: true, pointStyle: 'circle' } },
+        tooltip: {
+          backgroundColor: '#14172B', padding: 10, cornerRadius: 8,
+          callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.raw === null ? '—' : ctx.raw.toFixed(2) + '%'}` }
+        }
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { family: "'Inter'", weight: '600' } } },
+        y: { grid: { color: '#EEF0F5' }, border: { display: false }, ticks: { font: { family: "'Inter'" }, callback: v => v + '%' } }
+      }
+    }
+  });
+
+  const marginRow = document.getElementById('marginRow');
+  marginRow.innerHTML = QUARTER_SHORT.map((q, i) => {
+    const m = marginSeries[i];
+    const cls = m === null ? 'empty' : (m >= 0 ? 'positive' : 'negative');
+    return `
+      <div class="margin-cell">
+        <div class="q">Margin ${q}</div>
+        <div class="m ${cls}">${m === null ? '—' : (m >= 0 ? '+' : '') + m.toFixed(2) + '%'}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+/* ===================== DETAIL PER TAHUN (NOMINAL) ===================== */
+
+function renderDetail(year){
+  const [y1, y2] = state.data.years;
+  const otherYear = year === y1 ? y2 : y1;
+
+  document.getElementById('detailYearLabel').textContent = 'Detail Tahun ' + year;
 
   const revKey = 'Pendapatan Bersih (Net Sales/Revenue)';
   const gpKey = 'Laba Kotor (Gross Profit)';
   const cogsKey = 'Biaya Modal';
   const opexKey = 'Beban Oprasional';
 
-  const revenue = totalFor(revKey, state.year);
-  const grossProfit = totalFor(gpKey, state.year);
-  const cogs = totalFor(cogsKey, state.year);
-  const opex = totalFor(opexKey, state.year);
+  const revenue = totalFor(revKey, year);
+  const grossProfit = totalFor(gpKey, year);
+  const cogs = totalFor(cogsKey, year);
+  const opex = totalFor(opexKey, year);
 
   document.getElementById('kpi-pendapatan').textContent = fmtRp(revenue);
   document.getElementById('kpi-laba').textContent = fmtRp(grossProfit);
@@ -803,21 +967,18 @@ function render(){
   setTrend('trend-modal', cogs, totalFor(cogsKey, otherYear));
   setTrend('trend-beban', opex, totalFor(opexKey, otherYear));
 
-  renderQuarterlyChart();
-  renderBreakdown(revenue, grossProfit, cogs, opex);
-  renderRatioChart();
-  renderGrowthCard();
-  renderRealisasiChart();
-  buildLedgerTable();
+  renderQuarterlyChart(year);
+  renderBreakdown(year, revenue, grossProfit, cogs, opex);
+  buildLedgerTable(year);
 }
 
-function renderQuarterlyChart(){
+function renderQuarterlyChart(year){
   const ctx = document.getElementById('quarterlyChart');
-  document.getElementById('quarterlySub').textContent = 'Tahun ' + state.year;
+  document.getElementById('quarterlySub').textContent = 'Nilai penuh per kuartal — Tahun ' + year;
 
   const datasets = METRICS.map(m => ({
     label: METRIC_SHORT[m],
-    data: quarterSeries(m, state.year),
+    data: quarterSeries(m, year),
     backgroundColor: METRIC_COLOR[m],
     borderRadius: 6,
     borderSkipped: false,
@@ -833,16 +994,10 @@ function renderQuarterlyChart(){
       maintainAspectRatio: false,
       interaction: { mode: 'index', intersect: false },
       plugins: {
-        legend: {
-          position: 'bottom',
-          labels: { font: { family: "'Inter'", size: 12.5 }, boxWidth: 10, boxHeight: 10, usePointStyle: true, pointStyle: 'circle' }
-        },
+        legend: { position: 'bottom', labels: { font: { family: "'Inter'", size: 12.5 }, boxWidth: 10, boxHeight: 10, usePointStyle: true, pointStyle: 'circle' } },
         tooltip: {
-          backgroundColor: '#14172B',
-          padding: 10,
-          cornerRadius: 8,
-          titleFont: { family: "'Inter'", weight: '600' },
-          bodyFont: { family: "'Inter'" },
+          backgroundColor: '#14172B', padding: 10, cornerRadius: 8,
+          titleFont: { family: "'Inter'", weight: '600' }, bodyFont: { family: "'Inter'" },
           callbacks: { label: ctx => `${ctx.dataset.label}: ${fmtRp(ctx.raw)}` }
         }
       },
@@ -851,19 +1006,16 @@ function renderQuarterlyChart(){
         y: {
           grid: { color: '#EEF0F5' },
           border: { display: false },
-          ticks: {
-            font: { family: "'Inter'" },
-            callback: v => 'Rp' + (v/1000000).toFixed(0) + 'jt'
-          }
+          ticks: { font: { family: "'Inter'", size: 11 }, callback: v => fmtRp(v) }
         }
       }
     }
   });
 }
 
-function renderBreakdown(revenue, grossProfit, cogs, opex){
+function renderBreakdown(year, revenue, grossProfit, cogs, opex){
   const list = document.getElementById('breakdownList');
-  document.getElementById('breakdownSub').textContent = 'Terhadap pendapatan bersih · ' + state.year;
+  document.getElementById('breakdownSub').textContent = 'Terhadap pendapatan bersih · ' + year;
   const base = revenue || Math.max(grossProfit, cogs, opex, 1);
 
   const items = [
@@ -893,136 +1045,10 @@ function renderBreakdown(revenue, grossProfit, cogs, opex){
   netEl.className = 'value ' + (netProfit >= 0 ? 'positive' : 'negative');
 }
 
-function renderRatioChart(){
-  const ctx = document.getElementById('ratioChart');
-  document.getElementById('ratioSub').textContent = 'Procentace Revenue vs Beban Operasional · ' + state.year;
+function buildLedgerTable(year){
+  document.getElementById('ledgerSub').textContent = 'Semua pos per kuartal — Tahun ' + year;
+  document.getElementById('th-y').textContent = 'Nilai ' + year;
 
-  const revSeries = QUARTERS.map(q => state.data.percentRevenue[q] ? state.data.percentRevenue[q][state.year] : null);
-  const bebanSeries = QUARTERS.map(q => state.data.percentBeban[q] ? state.data.percentBeban[q][state.year] : null);
-
-  if(charts.ratio) charts.ratio.destroy();
-  charts.ratio = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels: QUARTER_SHORT,
-      datasets: [
-        {
-          label: 'Procentace Revenue',
-          data: revSeries,
-          borderColor: '#4C5FFF',
-          backgroundColor: '#4C5FFF',
-          tension: .3,
-          spanGaps: true
-        },
-        {
-          label: 'Procentace Beban Operasional',
-          data: bebanSeries,
-          borderColor: '#E0433D',
-          backgroundColor: '#E0433D',
-          tension: .3,
-          spanGaps: true
-        }
-      ]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: {
-          position: 'bottom',
-          labels: { font: { family: "'Inter'", size: 12.5 }, boxWidth: 10, boxHeight: 10, usePointStyle: true, pointStyle: 'circle' }
-        },
-        tooltip: {
-          backgroundColor: '#14172B',
-          padding: 10,
-          cornerRadius: 8,
-          callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.raw === null ? '—' : ctx.raw.toFixed(2) + '%'}` }
-        }
-      },
-      scales: {
-        x: { grid: { display: false }, ticks: { font: { family: "'Inter'", weight: '600' } } },
-        y: { grid: { color: '#EEF0F5' }, border: { display: false }, ticks: { font: { family: "'Inter'" }, callback: v => v + '%' } }
-      }
-    }
-  });
-}
-
-function renderGrowthCard(){
-  const targetEntry = Object.keys(state.data.target).find(k => k.toLowerCase().includes('target'));
-  const realisasiEntry = Object.keys(state.data.target).find(k => k.toLowerCase().includes('realisasi'));
-
-  const targetVal = targetEntry ? state.data.target[targetEntry][state.year] : null;
-  const realisasiVal = realisasiEntry ? state.data.target[realisasiEntry][state.year] : null;
-
-  document.getElementById('targetGrowth').textContent = fmtPct(targetVal);
-  document.getElementById('realisasiGrowth').textContent = fmtPct(realisasiVal);
-
-  const verdict = document.getElementById('growthVerdict');
-  if(targetVal === null || realisasiVal === null){
-    verdict.innerHTML = '<span>Realisasi belum tersedia untuk tahun ' + state.year + '.</span>';
-    return;
-  }
-  const diff = realisasiVal - targetVal;
-  const achieved = diff >= 0;
-  verdict.innerHTML = `
-    <span class="pill ${achieved ? 'up' : 'down'}">${achieved ? upIcon : downIcon} ${Math.abs(diff).toFixed(2)} poin</span>
-    <span>${achieved ? 'di atas target' : 'di bawah target'} pertumbuhan ${state.year}</span>
-  `;
-}
-
-function renderRealisasiChart(){
-  const ctx = document.getElementById('realisasiChart');
-  const targetSeries = QUARTERS.map(q => state.data.quarterlyRealisasi[q] ? state.data.quarterlyRealisasi[q].target : null);
-  const realisasiSeries = QUARTERS.map(q => state.data.quarterlyRealisasi[q] ? state.data.quarterlyRealisasi[q].realisasi : null);
-  const marginSeries = QUARTERS.map(q => state.data.quarterlyRealisasi[q] ? state.data.quarterlyRealisasi[q].margin : null);
-
-  if(charts.realisasi) charts.realisasi.destroy();
-  charts.realisasi = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: QUARTER_SHORT,
-      datasets: [
-        { label: 'Target', data: targetSeries, backgroundColor: '#C9CDF0', borderRadius: 6, maxBarThickness: 40 },
-        { label: 'Realisasi', data: realisasiSeries, backgroundColor: '#4C5FFF', borderRadius: 6, maxBarThickness: 40 }
-      ]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: {
-          position: 'bottom',
-          labels: { font: { family: "'Inter'", size: 12.5 }, boxWidth: 10, boxHeight: 10, usePointStyle: true, pointStyle: 'circle' }
-        },
-        tooltip: {
-          backgroundColor: '#14172B',
-          padding: 10,
-          cornerRadius: 8,
-          callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.raw === null ? '—' : ctx.raw.toFixed(2) + '%'}` }
-        }
-      },
-      scales: {
-        x: { grid: { display: false }, ticks: { font: { family: "'Inter'", weight: '600' } } },
-        y: { grid: { color: '#EEF0F5' }, border: { display: false }, ticks: { font: { family: "'Inter'" }, callback: v => v + '%' } }
-      }
-    }
-  });
-
-  const marginRow = document.getElementById('marginRow');
-  marginRow.innerHTML = QUARTER_SHORT.map((q, i) => {
-    const m = marginSeries[i];
-    const cls = m === null ? 'empty' : (m >= 0 ? 'positive' : 'negative');
-    return `
-      <div class="margin-cell">
-        <div class="q">Margin ${q}</div>
-        <div class="m ${cls}">${m === null ? '—' : (m >= 0 ? '+' : '') + m.toFixed(2) + '%'}</div>
-      </div>
-    `;
-  }).join('');
-}
-
-function buildLedgerTable(){
-  const [y1, y2] = state.data.years;
   const tbody = document.querySelector('#ledgerTable tbody');
   tbody.innerHTML = '';
 
@@ -1033,8 +1059,7 @@ function buildLedgerTable(){
       tr.innerHTML = `
         <td class="q-label">${mi === 0 ? `<span class="badge-q">${QUARTER_SHORT[qi]}</span>` : ''}</td>
         <td>${METRIC_SHORT[m]}</td>
-        <td class="num">${fmtRp(vals[y1])}</td>
-        <td class="num">${fmtRp(vals[y2])}</td>
+        <td class="num">${fmtRp(vals[year])}</td>
       `;
       tbody.appendChild(tr);
     });
@@ -1044,8 +1069,7 @@ function buildLedgerTable(){
   tr.classList.add('total-row');
   tr.innerHTML = `
     <td colspan="2">Total Pendapatan Bersih</td>
-    <td class="num">${fmtRp(totalFor('Pendapatan Bersih (Net Sales/Revenue)', y1))}</td>
-    <td class="num">${fmtRp(totalFor('Pendapatan Bersih (Net Sales/Revenue)', y2))}</td>
+    <td class="num">${fmtRp(totalFor('Pendapatan Bersih (Net Sales/Revenue)', year))}</td>
   `;
   tbody.appendChild(tr);
 }
@@ -1055,14 +1079,9 @@ function showError(err){
   const banner = document.getElementById('errorBanner');
   banner.hidden = false;
   banner.innerHTML = `
-    <strong>Data dari OneDrive tidak dapat dimuat.</strong>
-    <div style="margin-top:6px;">Detail teknis: ${err.message}</div>
-    <ul>
-      <li>Pastikan file Excel di-share dengan akses <strong>"Anyone with the link can view"</strong>.</li>
-      <li>Pastikan dashboard dibuka lewat GitHub Pages (bukan dobel klik file di komputer).</li>
-      <li>Jika tetap gagal, kemungkinan OneDrive membatasi akses lintas domain (CORS) — sebagai alternatif, data bisa dijembatani lewat Google Sheets (copy-paste data, lalu Google Sheets yang dibaca dashboard).</li>
-    </ul>
-    <code>${ONEDRIVE_CONTENT_URL}</code>
+    <strong>Data tidak dapat dimuat.</strong> Pastikan link CSV masih bisa diakses publik (File → Bagikan → Publikasikan ke web → CSV).
+    <code>${CSV_URL}</code>
+    <div style="margin-top:8px;">Detail: ${err.message}</div>
   `;
 }
 
