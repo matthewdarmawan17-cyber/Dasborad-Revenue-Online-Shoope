@@ -619,8 +619,7 @@
 </div>
 
 <script>
-const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ52cIawj9uVVP2N5tCkDOqTpsSK9A5OBCOcOpUgZFVONI-wMmfJKjJ_zKi_GgZ1bHFU1gW9N1jgMgB/pub?output=csv";
-const PROXY_URL = "https://api.allorigins.win/raw?url=" + encodeURIComponent(CSV_URL);
+const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ52cIawj9uVVP2N5tCkDOqTpsSK9A5OBCOcOpUgZFVONI-wMmfJKjJ_zKi_GgZ1bHFU1gW9N1jgMgB/pub?output=csv&gid=0";
 
 const METRICS = [
   'Laba Kotor (Gross Profit)',
@@ -765,29 +764,49 @@ const HARDCODED_DATA = {
 };
 
 async function loadData(){
-  // Coba fetch live dari spreadsheet (hanya berhasil jika dihosting online)
+  const PROXY_URLS = [
+    'https://api.allorigins.win/raw?url=' + encodeURIComponent(CSV_URL),
+    'https://corsproxy.io/?' + encodeURIComponent(CSV_URL),
+    'https://cors-anywhere.herokuapp.com/' + CSV_URL
+  ];
+
   async function tryFetch(url){
-    const res = await fetch(url, { cache: 'no-store' });
-    if(!res.ok) throw new Error('HTTP ' + res.status);
-    return await res.text();
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+    try{
+      const res = await fetch(url, { cache: 'no-store', signal: controller.signal });
+      clearTimeout(timeout);
+      if(!res.ok) throw new Error('HTTP ' + res.status);
+      const text = await res.text();
+      if(!text || text.trim().length < 10) throw new Error('Empty response');
+      return text;
+    }finally{
+      clearTimeout(timeout);
+    }
   }
 
-  try{
-    let text;
+  // Coba langsung dulu, lalu semua proxy satu per satu
+  const attempts = [CSV_URL, ...PROXY_URLS];
+  for(const url of attempts){
     try{
-      text = await tryFetch(CSV_URL);
+      console.log('Mencoba fetch dari:', url);
+      const text = await tryFetch(url);
+      const parsed = Papa.parse(text.trim(), { skipEmptyLines: false });
+      if(parsed.data && parsed.data.length > 3){
+        console.log('Fetch berhasil dari:', url);
+        processData(parsed.data);
+        return;
+      }
     }catch(e){
-      text = await tryFetch(PROXY_URL);
+      console.warn('Gagal dari', url, ':', e.message);
     }
-    const parsed = Papa.parse(text.trim(), { skipEmptyLines: false });
-    processData(parsed.data);
-  }catch(err){
-    // Fetch gagal (kemungkinan dibuka lokal) -> pakai data hardcoded
-    console.warn('Fetch gagal, menggunakan data hardcoded:', err.message);
-    QUARTERS = ['Q1','Q2','Q3','Q4'];
-    state.data = HARDCODED_DATA;
-    init();
   }
+
+  // Semua fetch gagal -> pakai data hardcoded
+  console.warn('Semua fetch gagal, menggunakan data hardcoded.');
+  QUARTERS = ['Q1','Q2','Q3','Q4'];
+  state.data = HARDCODED_DATA;
+  init();
 }
 
 function processData(rows){
@@ -805,33 +824,43 @@ function processData(rows){
   let mode = 'financial';
   let currentQuarter = null;
 
+  // Helper: normalisasi teks untuk matching lebih fleksibel
+  function norm(s){ return String(s||'').toLowerCase().replace(/\s+/g,' ').trim(); }
+
   for(const row of rows){
     const label = String(row[0] ?? '').trim();
     if(!label) continue;
+    const labelN = norm(label);
 
-    // Deteksi header kolom "Periode" -> ambil tahun dari kolom berikutnya
-    if(label === 'Periode'){
+    // Deteksi header kolom tahun
+    if(labelN === 'periode' || labelN === 'period'){
       const y1 = String(row[1] ?? '').trim();
       const y2 = String(row[2] ?? '').trim();
-      if(/^\d{4}$/.test(y1)) years = [y1, y2 || '2026'];
+      if(/^\d{4}$/.test(y1)) years = [y1, /^\d{4}$/.test(y2) ? y2 : '2026'];
       continue;
     }
 
-    // Deteksi pergantian section tabel (nama tabel dari Google Sheets)
-    // Bisa berupa "Table1", "Procentace Revenue", "Procentace Beban Oprasi...", "Revenue Target", "REVENUE 2026", dll
-    if(/^Table\s*1$/i.test(label) || label === 'Table1'){ mode = 'financial'; currentQuarter = null; continue; }
-    if(/procentace?\s+revenue/i.test(label)){ mode = 'percentRevenue'; currentQuarter = null; continue; }
-    if(/procentace?\s+beban/i.test(label)){ mode = 'percentBeban'; currentQuarter = null; continue; }
-    if(/revenue\s+ter?get/i.test(label) || /revenue\s+target/i.test(label)){ mode = 'target'; currentQuarter = null; continue; }
-    if(/^REVENUE\s+\d{4}/i.test(label)){
+    // Deteksi section headers (lebih fleksibel)
+    if(/^table\s*1$/i.test(label) || label === 'Table1' || /laporan keuangan/i.test(label)){
+      mode = 'financial'; currentQuarter = null; continue;
+    }
+    if(/procentac[e]?\s+revenue/i.test(label) || /persen.*revenue/i.test(label) || /rasio.*revenue/i.test(label)){
+      mode = 'percentRevenue'; currentQuarter = null; continue;
+    }
+    if(/procentac[e]?\s+beban/i.test(label) || /persen.*beban/i.test(label) || /rasio.*beban/i.test(label)){
+      mode = 'percentBeban'; currentQuarter = null; continue;
+    }
+    if(/revenue\s*ter?get/i.test(label) || /revenue\s*target/i.test(label) || /target.*revenue/i.test(label) || /target.*pertumbuhan/i.test(label)){
+      mode = 'target'; currentQuarter = null; continue;
+    }
+    if(/^REVENUE\s+\d{4}/i.test(label) || /realisasi.*target/i.test(label) || /quarterly.*realisasi/i.test(label)){
       mode = 'quarterlyRealisasi';
-      realisasiLabel = 'Realisasi vs Target ' + label.replace(/^REVENUE\s+/i, 'Revenue ');
-      currentQuarter = null;
-      continue;
+      realisasiLabel = 'Realisasi vs Target ' + label.replace(/^REVENUE\s+/i,'Revenue ');
+      currentQuarter = null; continue;
     }
 
+    // Deteksi baris kuartal
     if(/^Q[1-4]/i.test(label)){
-      // Normalisasi ke Q1/Q2/Q3/Q4
       currentQuarter = normalizeQ(label);
       if(!currentQuarter) continue;
 
@@ -851,16 +880,40 @@ function processData(rows){
       continue;
     }
 
+    // Baris data keuangan (di bawah kuartal)
     if(mode === 'financial' && currentQuarter){
-      // Match metrik dengan lebih fleksibel (trim, case-insensitive partial)
-      const matchedMetric = METRICS.find(m => label === m || label.toLowerCase() === m.toLowerCase());
+      const matchedMetric = METRICS.find(m =>
+        label === m ||
+        norm(label) === norm(m) ||
+        norm(label).includes(norm(m).substring(0, 10))
+      );
       if(matchedMetric){
         financial[currentQuarter][matchedMetric] = { [years[0]]: parseRp(row[1]), [years[1]]: parseRp(row[2]) };
       }
     }
+    // Baris data target
     if(mode === 'target'){
       target[label] = { [years[0]]: parsePct(row[1]), [years[1]]: parsePct(row[2]) };
     }
+  }
+
+  // Fallback: jika financial kosong, gunakan hardcoded data sebagai dasar lalu merge hasil parse
+  const hasFinancialData = Object.keys(financial).length > 0 &&
+    Object.values(financial).some(q => Object.keys(q).length > 0);
+
+  if(!hasFinancialData){
+    console.warn('Parsing financial data kosong — menggunakan HARDCODED_DATA sebagai fallback.');
+    QUARTERS = ['Q1','Q2','Q3','Q4'];
+    state.data = {
+      ...HARDCODED_DATA,
+      ...(Object.keys(percentRevenue).length > 0 ? {percentRevenue} : {}),
+      ...(Object.keys(percentBeban).length > 0   ? {percentBeban}   : {}),
+      ...(Object.keys(target).length > 0         ? {target}         : {}),
+      ...(Object.keys(quarterlyRealisasi).length > 0 ? {quarterlyRealisasi} : {}),
+      realisasiLabel
+    };
+    init();
+    return;
   }
 
   // Gunakan key Q1/Q2/Q3/Q4 yang normalized
