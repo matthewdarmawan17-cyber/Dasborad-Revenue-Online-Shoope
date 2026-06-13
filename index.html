@@ -690,7 +690,7 @@ function processData(rows){
   const quarterlyRealisasi = {};
   let realisasiLabel = 'Realisasi vs Target Revenue';
   let years = ['2025', '2026'];
-  let mode = null;
+  let mode = 'financial';
   let currentQuarter = null;
 
   for(const row of rows){
@@ -698,8 +698,9 @@ function processData(rows){
     if(!label) continue;
 
     if(label === 'Periode'){
-      years = [String(row[1]).trim(), String(row[2]).trim()];
-      mode = 'financial';
+      if(/^\d{4}$/.test(String(row[1] ?? '').trim())){
+        years = [String(row[1]).trim(), String(row[2]).trim()];
+      }
       continue;
     }
     if(label.startsWith('Procentace Revenue')){ mode = 'percentRevenue'; continue; }
