@@ -620,6 +620,7 @@
 
 <script>
 const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ52cIawj9uVVP2N5tCkDOqTpsSK9A5OBCOcOpUgZFVONI-wMmfJKjJ_zKi_GgZ1bHFU1gW9N1jgMgB/pub?output=csv";
+const PROXY_URL = "https://api.allorigins.win/raw?url=" + encodeURIComponent(CSV_URL);
 
 const METRICS = [
   'Laba Kotor (Gross Profit)',
@@ -671,10 +672,21 @@ const upIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strok
 const downIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
 
 async function loadData(){
-  try{
-    const res = await fetch(CSV_URL, { cache: 'no-store' });
+  // Coba fetch langsung dulu, jika gagal (CORS) pakai proxy
+  async function tryFetch(url){
+    const res = await fetch(url, { cache: 'no-store' });
     if(!res.ok) throw new Error('HTTP ' + res.status);
-    const text = await res.text();
+    return await res.text();
+  }
+
+  try{
+    let text;
+    try{
+      text = await tryFetch(CSV_URL);
+    }catch(e){
+      // Fallback ke CORS proxy
+      text = await tryFetch(PROXY_URL);
+    }
     const parsed = Papa.parse(text.trim(), { skipEmptyLines: false });
     processData(parsed.data);
   }catch(err){
