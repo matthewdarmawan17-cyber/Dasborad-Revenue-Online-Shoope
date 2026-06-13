@@ -707,8 +707,65 @@ function fmtPct(n){
 const upIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>';
 const downIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
 
+// ===================== DATA HARDCODED DARI SPREADSHEET =====================
+// Data ini diambil langsung dari spreadsheet. Jika dashboard dihosting online,
+// data akan otomatis diperbarui dari spreadsheet. Jika dibuka lokal, data ini dipakai.
+
+const HARDCODED_DATA = {
+  years: ['2025', '2026'],
+  financial: {
+    'Q1': {
+      'Laba Kotor (Gross Profit)':              { '2025': 9714900,  '2026': 9196800  },
+      'Pendapatan Bersih (Net Sales/Revenue)':  { '2025': 909761,   '2026': 1536044  },
+      'Biaya Modal':                            { '2025': 7084343,  '2026': 5099657  },
+      'Beban Oprasional':                       { '2025': 1065296,  '2026': 1960686  }
+    },
+    'Q2': {
+      'Laba Kotor (Gross Profit)':              { '2025': 9816350,  '2026': null },
+      'Pendapatan Bersih (Net Sales/Revenue)':  { '2025': 893474,   '2026': null },
+      'Biaya Modal':                            { '2025': 9816350,  '2026': null },
+      'Beban Oprasional':                       { '2025': 1237370,  '2026': null }
+    },
+    'Q3': {
+      'Laba Kotor (Gross Profit)':              { '2025': 13336050, '2026': null },
+      'Pendapatan Bersih (Net Sales/Revenue)':  { '2025': 1017973,  '2026': null },
+      'Biaya Modal':                            { '2025': 9588710,  '2026': null },
+      'Beban Oprasional':                       { '2025': 2139450,  '2026': null }
+    },
+    'Q4': {
+      'Laba Kotor (Gross Profit)':              { '2025': 14107400, '2026': null },
+      'Pendapatan Bersih (Net Sales/Revenue)':  { '2025': 1205116,  '2026': null },
+      'Biaya Modal':                            { '2025': 9673951,  '2026': null },
+      'Beban Oprasional':                       { '2025': 2626584,  '2026': null }
+    }
+  },
+  percentRevenue: {
+    'Q1': { '2025': 12.80, '2026': 30.12 },
+    'Q2': { '2025': 9.10,  '2026': 20.28 },
+    'Q3': { '2025': 10.60, '2026': null  },
+    'Q4': { '2025': 12.50, '2026': null  }
+  },
+  percentBeban: {
+    'Q1': { '2025': 10.97, '2026': 21.32 },
+    'Q2': { '2025': 12.61, '2026': 22.21 },
+    'Q3': { '2025': 16.04, '2026': null  },
+    'Q4': { '2025': 18.62, '2026': null  }
+  },
+  target: {
+    'Target kenaikan keuntungan dari tahun sebelumnya': { '2025': 10,    '2026': 12.50 },
+    'Realisasi':                                        { '2025': 12.02, '2026': null  }
+  },
+  quarterlyRealisasi: {
+    'Q1': { target: 25.34, realisasi: 30.12, margin:  4.78  },
+    'Q2': { target: 21.60, realisasi: 20.28, margin: -1.33  },
+    'Q3': { target: 23.12, realisasi: null,  margin:  null  },
+    'Q4': { target: null,  realisasi: null,  margin:  null  }
+  },
+  realisasiLabel: 'Realisasi vs Target Revenue 2026'
+};
+
 async function loadData(){
-  // Coba fetch langsung dulu, jika gagal (CORS) pakai proxy
+  // Coba fetch live dari spreadsheet (hanya berhasil jika dihosting online)
   async function tryFetch(url){
     const res = await fetch(url, { cache: 'no-store' });
     if(!res.ok) throw new Error('HTTP ' + res.status);
@@ -720,13 +777,16 @@ async function loadData(){
     try{
       text = await tryFetch(CSV_URL);
     }catch(e){
-      // Fallback ke CORS proxy
       text = await tryFetch(PROXY_URL);
     }
     const parsed = Papa.parse(text.trim(), { skipEmptyLines: false });
     processData(parsed.data);
   }catch(err){
-    showError(err);
+    // Fetch gagal (kemungkinan dibuka lokal) -> pakai data hardcoded
+    console.warn('Fetch gagal, menggunakan data hardcoded:', err.message);
+    QUARTERS = ['Q1','Q2','Q3','Q4'];
+    state.data = HARDCODED_DATA;
+    init();
   }
 }
 
