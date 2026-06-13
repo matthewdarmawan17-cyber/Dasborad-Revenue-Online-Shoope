@@ -640,17 +640,53 @@ const METRIC_COLOR = {
   'Biaya Modal': '#F0A93E',
   'Beban Oprasional': '#E0433D'
 };
-const QUARTERS = ['Q1 (JAN-MARCH)','Q2 (APRIL-JUNE)','Q3 (JULY-SEPT)','Q4 (OCT-DES)'];
+// QUARTERS akan di-set ulang setelah data di-load agar cocok dengan kunci CSV
+let QUARTERS = ['Q1 (JAN-MARCH)','Q2 (APRIL-JUNE)','Q3 (JULY-SEPT)','Q4 (OCT-DES)'];
 const QUARTER_SHORT = ['Q1','Q2','Q3','Q4'];
+
+// Normalisasi label kuartal: ambil Q1/Q2/Q3/Q4
+function normalizeQ(label){ const m = String(label).match(/Q([1-4])/i); return m ? 'Q'+m[1] : null; }
 
 const state = { view: 'overview', data: null };
 const charts = {};
 
 function parseRp(val){
   if(val === undefined || val === null) return null;
-  const s = String(val).trim();
-  if(s === '' || s === '-') return null;
-  const n = parseFloat(s.replace(/Rp|,|\s/g,''));
+  let s = String(val).trim();
+  if(s === '' || s === '-' || s === '—') return null;
+  // Hapus "Rp", spasi, dan karakter non-numerik kecuali titik/koma
+  s = s.replace(/Rp/gi, '').replace(/\s/g, '').trim();
+  // Format Indonesia: titik sebagai pemisah ribuan, koma sebagai desimal -> "9.714.900" atau "9.714.900,50"
+  // Format US/CSV: koma sebagai pemisah ribuan -> "9,714,900"
+  // Deteksi: jika ada titik DAN koma, yang terakhir adalah desimal
+  if(s.includes('.') && s.includes(',')){
+    const lastDot = s.lastIndexOf('.');
+    const lastComma = s.lastIndexOf(',');
+    if(lastComma > lastDot){
+      // koma = desimal (format ID: 9.714.900,50)
+      s = s.replace(/\./g, '').replace(',', '.');
+    } else {
+      // titik = desimal (format US: 9,714,900.50)
+      s = s.replace(/,/g, '');
+    }
+  } else if(s.includes('.')){
+    // Hanya titik: bisa pemisah ribuan (9.714.900) atau desimal (9.5)
+    const parts = s.split('.');
+    if(parts.length > 2 || (parts.length === 2 && parts[1].length === 3)){
+      // Pemisah ribuan
+      s = s.replace(/\./g, '');
+    }
+    // else biarkan (desimal biasa)
+  } else if(s.includes(',')){
+    // Hanya koma: bisa pemisah ribuan (9,714,900) atau desimal
+    const parts = s.split(',');
+    if(parts.length > 2 || (parts.length === 2 && parts[1].length === 3)){
+      s = s.replace(/,/g, '');
+    } else {
+      s = s.replace(',', '.');
+    }
+  }
+  const n = parseFloat(s);
   return isNaN(n) ? null : n;
 }
 function parsePct(val){
@@ -695,6 +731,10 @@ async function loadData(){
 }
 
 function processData(rows){
+  // Debug: log first 50 rows to console so we can see actual CSV structure
+  console.log('=== CSV RAW DATA (first 50 rows) ===');
+  rows.slice(0, 50).forEach((r, i) => console.log(i, JSON.stringify(r)));
+
   const financial = {};
   const percentRevenue = {};
   const percentBeban = {};
@@ -709,25 +749,34 @@ function processData(rows){
     const label = String(row[0] ?? '').trim();
     if(!label) continue;
 
+    // Deteksi header kolom "Periode" -> ambil tahun dari kolom berikutnya
     if(label === 'Periode'){
-      if(/^\d{4}$/.test(String(row[1] ?? '').trim())){
-        years = [String(row[1]).trim(), String(row[2]).trim()];
-      }
-      continue;
-    }
-    if(label.startsWith('Procentace Revenue')){ mode = 'percentRevenue'; continue; }
-    if(label.startsWith('Procentace Beban')){ mode = 'percentBeban'; continue; }
-    if(label.startsWith('Revenue Terget')){ mode = 'target'; continue; }
-    if(/^REVENUE/i.test(label)){
-      mode = 'quarterlyRealisasi';
-      realisasiLabel = 'Realisasi vs Target ' + label.replace(/REVENUE/i, 'Revenue');
+      const y1 = String(row[1] ?? '').trim();
+      const y2 = String(row[2] ?? '').trim();
+      if(/^\d{4}$/.test(y1)) years = [y1, y2 || '2026'];
       continue;
     }
 
-    if(/^Q[1-4]/.test(label)){
-      currentQuarter = label;
+    // Deteksi pergantian section tabel (nama tabel dari Google Sheets)
+    // Bisa berupa "Table1", "Procentace Revenue", "Procentace Beban Oprasi...", "Revenue Target", "REVENUE 2026", dll
+    if(/^Table\s*1$/i.test(label) || label === 'Table1'){ mode = 'financial'; currentQuarter = null; continue; }
+    if(/procentace?\s+revenue/i.test(label)){ mode = 'percentRevenue'; currentQuarter = null; continue; }
+    if(/procentace?\s+beban/i.test(label)){ mode = 'percentBeban'; currentQuarter = null; continue; }
+    if(/revenue\s+ter?get/i.test(label) || /revenue\s+target/i.test(label)){ mode = 'target'; currentQuarter = null; continue; }
+    if(/^REVENUE\s+\d{4}/i.test(label)){
+      mode = 'quarterlyRealisasi';
+      realisasiLabel = 'Realisasi vs Target ' + label.replace(/^REVENUE\s+/i, 'Revenue ');
+      currentQuarter = null;
+      continue;
+    }
+
+    if(/^Q[1-4]/i.test(label)){
+      // Normalisasi ke Q1/Q2/Q3/Q4
+      currentQuarter = normalizeQ(label);
+      if(!currentQuarter) continue;
+
       if(mode === 'financial'){
-        financial[currentQuarter] = {};
+        financial[currentQuarter] = financial[currentQuarter] || {};
       }else if(mode === 'percentRevenue'){
         percentRevenue[currentQuarter] = { [years[0]]: parsePct(row[1]), [years[1]]: parsePct(row[2]) };
       }else if(mode === 'percentBeban'){
@@ -742,13 +791,28 @@ function processData(rows){
       continue;
     }
 
-    if(mode === 'financial' && currentQuarter && METRICS.includes(label)){
-      financial[currentQuarter][label] = { [years[0]]: parseRp(row[1]), [years[1]]: parseRp(row[2]) };
+    if(mode === 'financial' && currentQuarter){
+      // Match metrik dengan lebih fleksibel (trim, case-insensitive partial)
+      const matchedMetric = METRICS.find(m => label === m || label.toLowerCase() === m.toLowerCase());
+      if(matchedMetric){
+        financial[currentQuarter][matchedMetric] = { [years[0]]: parseRp(row[1]), [years[1]]: parseRp(row[2]) };
+      }
     }
     if(mode === 'target'){
       target[label] = { [years[0]]: parsePct(row[1]), [years[1]]: parsePct(row[2]) };
     }
   }
+
+  // Gunakan key Q1/Q2/Q3/Q4 yang normalized
+  QUARTERS = ['Q1','Q2','Q3','Q4'];
+
+  console.log('=== PARSED DATA ===');
+  console.log('years:', years);
+  console.log('financial:', JSON.stringify(financial));
+  console.log('percentRevenue:', JSON.stringify(percentRevenue));
+  console.log('percentBeban:', JSON.stringify(percentBeban));
+  console.log('target:', JSON.stringify(target));
+  console.log('quarterlyRealisasi:', JSON.stringify(quarterlyRealisasi));
 
   state.data = { years, financial, percentRevenue, percentBeban, target, quarterlyRealisasi, realisasiLabel };
   init();
